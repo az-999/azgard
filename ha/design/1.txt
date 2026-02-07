@@ -1,0 +1,5 @@
+Better Thermostat UI
+custom:better-thermostat-ui-card
+
+Dark Thermostat by @ciotlosm
+custom:thermostat-dark-card

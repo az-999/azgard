@@ -1,0 +1,24 @@
+rtsp://192.168.1.122:34567/user=admin&password=&channel=2&stream=0.sdp?
+rtsp://admin:123456@192.168.1.122:34567/cam/realmonitor?channel=2&subtype=0
+rtsp://admin:12345678@192.168.1.122:34567/cam/realmonitor?channel=2&subtype=0
+rtsp://admin:@192.168.1.122:34567/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:admin@192.168.1.122:34567/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:admin@192.168.1.122:34567/channel=2&stream=0.sdp?
+
+rtsp://192.168.1.122:554/user=admin&password=&channel=2&stream=0.sdp? - просит авторизоваться
+rtsp://admin:@192.168.1.122:554/channel=2&stream=0.sdp? - просит авторизоваться
+rtsp://admin:admin@192.168.1.122:554/channel=2&stream=0.sdp? - просит авторизоваться
+
+НАСТРОЙКА RTSP ПРЯМАЯ ТРАНСЛЯЦИЯ КАМЕР НАБЛЮДЕНИЯ
+https://www.youtube.com/watch?v=QpaLHle8tFM
+
+Модель
+Готовый комплект AHD видеонаблюдения 2 камеры 2MP ST KIT-A22HD
+
+у меня есть система видеонаблюдения на 4 камеры
+обычная коробочка с записью на жесткий диск, провода на камеры: 2 питания - 12в, и коаксиальный кабель. Есть приложение мобильное XMEye Pro.
+Модель устройства: Готовый комплект AHD видеонаблюдения 2 камеры 2MP ST KIT-A22HD
+я хочу подключить камеры в home assistant
+скидываю скриншот из настроек устройства
+
+как получить ссылку RTSP?

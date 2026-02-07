@@ -1,0 +1,20 @@
+# anpr-local/docker-compose.yml
+version: '3.8'
+
+services:
+  anpr:
+    build: .
+    container_name: anpr-local
+    runtime: nvidia  # Требует установки nvidia-container-toolkit
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./data:/data          # входные файлы (фото/видео)
+      - ./output:/output      # результаты распознавания
+    command: >
+      python3 recognize.py
+        --input /data
+        --output /output
+        --mode realtime       # или 'batch' для папки
+    restart: unless-stopped

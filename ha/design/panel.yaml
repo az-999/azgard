@@ -1,0 +1,52 @@
+views:
+  - path: default_view
+    title: Home
+    cards:
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: entities
+            entities:
+              - switch.domik_switch
+              - switch.septik_tualet_switch_1
+              - sensor.domik_total_energy
+              - sensor.domik_phase_a_power
+              - sensor.domik_phase_a_voltage
+              - sensor.domik_phase_a_current
+              - sensor.srw_th01_humidity
+              - sensor.srw_th01_temperature
+              - sensor.zyxel_keenetic_4g_iii_download_speed
+              - sensor.zyxel_keenetic_4g_iii_upload_speed
+            title: Кухня
+          - type: thermostat
+            entity: climate.umnyi_termostat_2
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - 'off'
+                  - heat_cool
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: entities
+            entities:
+              - entity: switch.bania_switch
+                name: Выключатель
+              - entity: sensor.bania_total_energy
+                name: Всего энергия
+              - entity: sensor.bania_phase_a_power
+                name: Мощность фазы 1
+              - entity: sensor.bania_phase_a_voltage
+                name: Напряжение фазы 1
+              - entity: sensor.bania_phase_a_current
+                name: Сила тока фазы 1
+            title: Баня
+          - type: thermostat
+            entity: climate.umnyi_termostat
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - 'off'
+                  - heat_cool

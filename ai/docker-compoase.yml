@@ -1,0 +1,71 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 1. Ollama — запуск Qwen3-8B на GPU
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_NUM_PARALLEL=8
+      - OLLAMA_MAX_LOADED_MODELS=1
+    restart: unless-stopped
+
+  # 2. Whisper ASR — распознавание речи
+  whisper:
+    image: rhasspy/wav2vec2:latest
+    container_name: whisper-asr
+    ports:
+      - "5001:5000"
+    command: >
+      python3 -m rhasspy-whisper-hermes
+      --model tiny
+      --language ru
+      --uri 'http://0.0.0.0:5000'
+    restart: unless-stopped
+
+  # 3. Silero TTS — синтез речи
+  silero-tts:
+    image: ghcr.io/zhuravlev/silero-tts:cpu-latest
+    container_name: silero-tts
+    ports:
+      - "5002:8000"
+    environment:
+      - LANG=ru
+      - VOICE=aidar_v3
+      - SAMPLE_RATE=24000
+    restart: unless-stopped
+
+  # 4. Open WebUI — интерфейс с поддержкой голоса
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_API_BASE_URL=http://whisper:5000
+      - TTS_API_BASE_URL=http://silero-tts:8000
+    depends_on:
+      - ollama
+      - whisper
+      - silero-tts
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  openwebui_data:
