@@ -6,9 +6,14 @@ services:
     restart: unless-stopped
     ports:
       - "8123:8123"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
+      # Доступ к D-Bus на хосте — обязательно для Bluetooth (BlueZ)
+      - /run/dbus:/run/dbus:ro
     environment:
       - TZ=Europe/Moscow
     depends_on:
