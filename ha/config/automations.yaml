@@ -1,0 +1,14 @@
+- id: fridge_cycle_on
+  alias: Включить розетку на 1 час (цикл 4ч)
+  triggers:
+    - hours: /4
+      trigger: time_pattern
+  actions:
+    - target:
+        entity_id: switch.t34_smart_plug_switch_1
+      action: switch.turn_on
+    - delay:
+        hours: 1
+    - target:
+        entity_id: switch.t34_smart_plug_switch_1
+      action: switch.turn_off

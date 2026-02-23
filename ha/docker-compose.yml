@@ -4,16 +4,23 @@ services:
     image: "ghcr.io/home-assistant/home-assistant:stable"
     container_name: homeassistant
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8123:8123"
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Europe/Moscow
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - ha_network
 
   mariadb:
-    image: "ghcr.io/home-assistant/mariadb:10.6"
+    image: "mariadb:10.11"
     container_name: mariadb
     restart: unless-stopped
-    network_mode: host
     volumes:
       - ./mariadb/data:/var/lib/mysql
     environment:
@@ -23,3 +30,32 @@ services:
       - MYSQL_PASSWORD=password
     command: >
       mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      timeout: 10s
+      retries: 5
+    networks:
+      - ha_network
+
+  phpmyadmin:
+    image: lscr.io/linuxserver/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8999:80"
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=password
+      - UPLOAD_LIMIT=128M
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+    depends_on:
+      - mariadb
+    networks:
+      - ha_network
+
+networks:
+  ha_network:
+    driver: bridge
