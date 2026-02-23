@@ -1,7 +1,7 @@
 version: '3'
 services:
   homeassistant:
-    image: "ghcr.io/home-assistant/home-assistant:stable"
+    build: .
     container_name: homeassistant
     restart: unless-stopped
     ports:

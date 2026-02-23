@@ -59,11 +59,18 @@ config/.storage
 config/__pycache__/
 config/*.pyc
 config/deps/
-config/custom_components/*/
+# Кэш Python внутри custom_components
+config/custom_components/__pycache__/
+config/custom_components/*.pyc
 
 # Кэши интеграций
 config/.cloud
 config/.config_entries.json
+
+# Игнорируем только кэш внутри www (если есть)
+config/www/__pycache__/
+config/www/*.tmp
+
 
 # ─────────────────────────────────────────────────────────────
 # 📦 BACKUP И АРХИВЫ
