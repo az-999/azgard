@@ -1,0 +1,22 @@
+alias: "UPS Notifications"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.power_grid_220v
+    to: "off"
+action:
+  - service: notify.mobile_app
+    data:
+      message: "⚠️ ПРОПАЛО НАПРЯЖЕНИЕ 220V! ИБП включен."
+      title: "Power Outage"
+
+        push:
+          sound: "default"
+
+  - platform: state
+    entity_id: binary_sensor.power_grid_220v
+    to: "on"
+action:
+  - service: notify.mobile_app
+
+      message: "✅ Напряжение 220V восстановлено"
+      title: "Power Restored"

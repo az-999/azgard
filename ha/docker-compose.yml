@@ -1,0 +1,25 @@
+version: '3'
+services:
+  homeassistant:
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  mariadb:
+    image: "ghcr.io/home-assistant/mariadb:10.6"
+    container_name: mariadb
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=homeassistant
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=password
+    command: >
+      mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci

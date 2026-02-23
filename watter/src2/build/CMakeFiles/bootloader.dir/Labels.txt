@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+C:/water/esp32h2_zigbee_water_meter/build/CMakeFiles/bootloader
+C:/water/esp32h2_zigbee_water_meter/build/CMakeFiles/bootloader.rule
+C:/water/esp32h2_zigbee_water_meter/build/CMakeFiles/bootloader-complete.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+C:/water/esp32h2_zigbee_water_meter/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

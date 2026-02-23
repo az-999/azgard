@@ -1,0 +1,17 @@
+alias: "Safe Shutdown on Low Battery"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.power_grid_220v
+    to: "off"
+    for:
+      minutes: 25  # Через 25 минут после отключения
+condition:
+  - condition: state
+    entity_id: binary_sensor.power_grid_220v
+    state: "off"
+action:
+  - service: hassio.host_shutdown
+      {}
+  - service: notify.mobile_app
+
+      message: " Home Assistant выключен (разряд ИБП)"

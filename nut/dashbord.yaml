@@ -1,0 +1,14 @@
+type: entities
+title: ⚡ UPS Monitor
+entities:
+  - entity: binary_sensor.power_grid_220v
+    name: Network 220V
+  - entity: sensor.ups_status
+    name: Status
+  - entity: switch.ups_power_button
+    name: Manual UPS Control
+  - entity: sensor.ups_monitor_uptime
+    name: Monitor Uptime
+  - type: button
+    name: Test UPS Button
+    entity: button.manual_ups_power_on

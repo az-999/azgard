@@ -1,0 +1,132 @@
+esphome:
+  name: ups-monitor
+  friendly_name: UPS Monitor & Control
+  platformio_options:
+    board_build.f_cpu: 160000000L
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "UPS-Monitor Fallback"
+    password: "FallbackPass123"
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: "ota_password_123"
+
+logger:
+  level: INFO
+
+# ============================================
+# ДАТЧИК НАЛИЧИЯ СЕТИ 220V
+# ============================================
+binary_sensor:
+  - platform: gpio
+    pin: GPIO9
+    name: "Power Grid 220V"
+    id: grid_power
+    device_class: power
+    icon: mdi:transmission-tower
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+    on_press:
+      then:
+        - logger.log: "✅ Сеть 220V ПОЯВИЛАСЬ"
+        - script.execute: handle_power_restored
+    on_release:
+      then:
+        - logger.log: "❌ Сеть 220V ПРОПАЛА"
+        - script.execute: handle_power_loss
+
+# ============================================
+# РЕЛЕ УПРАВЛЕНИЯ ИБП (эмуляция кнопки)
+# ============================================
+switch:
+  - platform: gpio
+    pin: GPIO8
+    name: "UPS Power Button"
+    id: ups_relay
+    icon: mdi:power
+    restore_mode: ALWAYS_OFF  # При перезагрузке реле выключено
+    interlock: []  # Можно добавить другие реле для взаимной блокировки
+
+# ============================================
+# СЦЕНАРИИ (SCRIPTS)
+# ============================================
+script:
+  # Обработка потери сети
+  - id: handle_power_loss
+    then:
+      - delay: 2s  # Ждем 2 секунды (вдруг кратковременный скачок)
+      - if:
+          condition:
+            binary_sensor.is_off: grid_power
+          then:
+            - logger.log: "🔋 Сеть пропала надолго, включаем ИБП..."
+            - script.execute: press_ups_button
+
+  # Обработка восстановления сети
+  - id: handle_power_restored
+    then:
+      - logger.log: "🔌 Сеть восстановилась"
+      - sensor.publish:
+          id: last_power_restore
+          state: !lambda 'return id(sntp_time).now().timestamp;'
+
+  # Эмуляция нажатия кнопки ИБП (3 секунды)
+  - id: press_ups_button
+    then:
+      - logger.log: "🔘 НАЖИМАЕМ кнопку ИБП на 3 секунды..."
+      - switch.turn_on: ups_relay
+      - delay: 3s  # Держим кнопку нажатой 3 секунды
+      - switch.turn_off: ups_relay
+      - logger.log: "✅ Кнопка ИБП отпущена"
+
+# ============================================
+# ДОПОЛНИТЕЛЬНЫЕ СЕНСОРЫ
+# ============================================
+sensor:
+  - platform: uptime
+    name: "UPS Monitor Uptime"
+    update_interval: 60s
+
+  - platform: template
+    name: "Last Power Restore"
+    id: last_power_restore
+    device_class: timestamp
+    accuracy_decimals: 0
+
+# Текстовый статус
+text_sensor:
+  - platform: template
+    name: "UPS Status"
+    id: ups_status_text
+    lambda: |-
+      if (id(grid_power).state) {
+        return {" Сеть есть"};
+      } else {
+        return {"🔋 Работает от ИБП"};
+      }
+    update_interval: 5s
+
+# Кнопки управления
+button:
+  - platform: restart
+    name: "Restart UPS Monitor"
+
+  - platform: template
+    name: "Manual UPS Power On"
+    on_press:
+      then:
+        - script.execute: press_ups_button

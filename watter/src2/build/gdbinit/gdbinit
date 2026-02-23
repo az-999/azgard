@@ -1,0 +1,2 @@
+source C:/water/esp32h2_zigbee_water_meter/build/gdbinit/symbols
+source C:/water/esp32h2_zigbee_water_meter/build/gdbinit/connect

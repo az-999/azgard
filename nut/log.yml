@@ -1,0 +1,11 @@
+alias: "Log Power Outages"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.power_grid_220v
+action:
+  - service: system_log.write
+
+      message: >
+        Power outage detected at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+        Duration: {{ states('sensor.ups_monitor_uptime') }} uptime
+      level: warning
