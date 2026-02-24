@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     privileged: true  # полные права для Bluetooth (обход проверки прав в HA)
     ports:
-      - "8123:8123"
+      - "80:8123"
     cap_add:
       - NET_ADMIN
       - NET_RAW
