@@ -2,7 +2,7 @@
 version: '3.8'
 
 services:
-  # 1. Ollama — запуск Qwen3-8B на GPU
+  # 1. Ollama — запуск на GPU
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -21,7 +21,25 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - OLLAMA_NUM_PARALLEL=8
       - OLLAMA_MAX_LOADED_MODELS=1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
+
+  # 1.1 Init: подтягивание модели Qwen3-8B в Ollama (один раз после старта)
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: ollama-pull
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    command: ["ollama", "pull", "qwen3:8b"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
 
   # 2. Whisper ASR — распознавание речи
   whisper:
