@@ -1,4 +1,5 @@
-**Подготовка окружения (Windows 11 + WSL2, GPU):** [setup-win-wsl.md](setup-win-wsl.md)
+**Подготовка окружения (Windows 11 + WSL2, GPU):** [setup-win-wsl.md](setup-win-wsl.md)  
+**Голос по образцу (OpenVoice):** [openvoice-usage.md](openvoice-usage.md)
 
 https://chat.qwen.ai/s/350b039f-aab6-4ba7-bbe7-a19dba65c293?fev=0.1.38
 

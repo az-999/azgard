@@ -54,7 +54,7 @@ services:
       --uri 'http://0.0.0.0:5000'
     restart: unless-stopped
 
-  # 3. Silero TTS — синтез речи
+  # 3. Silero TTS — синтез речи (фиксированные голоса)
   silero-tts:
     image: ghcr.io/zhuravlev/silero-tts:cpu-latest
     container_name: silero-tts
@@ -64,6 +64,27 @@ services:
       - LANG=ru
       - VOICE=aidar_v3
       - SAMPLE_RATE=24000
+    restart: unless-stopped
+
+  # 3.1 OpenVoice — клонирование голоса по образцу (загрузите образец — ассистент будет говорить этим голосом)
+  openvoice:
+    image: valyriantech/openvoice_server:latest
+    container_name: openvoice
+    ports:
+      - "5003:8000"
+    restart: unless-stopped
+
+  # 3.2 Адаптер OpenVoice → формат API Open WebUI (указывайте в TTS имя загруженного голоса)
+  openvoice-adapter:
+    build: ./openvoice-adapter
+    container_name: openvoice-adapter
+    ports:
+      - "5010:5010"
+    environment:
+      - OPENVOICE_URL=http://openvoice:8000
+      - OPENVOICE_DEFAULT_VOICE=demo_speaker0
+    depends_on:
+      - openvoice
     restart: unless-stopped
 
   # 4. Open WebUI — интерфейс с поддержкой голоса
@@ -82,6 +103,7 @@ services:
       - ollama
       - whisper
       - silero-tts
+      - openvoice-adapter
     restart: unless-stopped
 
 volumes:
