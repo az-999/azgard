@@ -68,25 +68,25 @@ services:
     restart: unless-stopped
 
   # 3.1 OpenVoice — клонирование голоса по образцу (загрузите образец — ассистент будет говорить этим голосом)
-  openvoice:
-    image: valyriantech/openvoice_server:latest
-    container_name: openvoice
-    ports:
-      - "5003:8000"
-    restart: unless-stopped
+  # openvoice:
+  #   image: valyriantech/openvoice_server:latest
+  #   container_name: openvoice
+  #   ports:
+  #     - "5003:8000"
+  #   restart: unless-stopped
 
-  # 3.2 Адаптер OpenVoice → формат API Open WebUI (указывайте в TTS имя загруженного голоса)
-  openvoice-adapter:
-    build: ./openvoice-adapter
-    container_name: openvoice-adapter
-    ports:
-      - "5010:5010"
-    environment:
-      - OPENVOICE_URL=http://openvoice:8000
-      - OPENVOICE_DEFAULT_VOICE=demo_speaker0
-    depends_on:
-      - openvoice
-    restart: unless-stopped
+  # # 3.2 Адаптер OpenVoice → формат API Open WebUI (указывайте в TTS имя загруженного голоса)
+  # openvoice-adapter:
+  #   build: ./openvoice-adapter
+  #   container_name: openvoice-adapter
+  #   ports:
+  #     - "5010:5010"
+  #   environment:
+  #     - OPENVOICE_URL=http://openvoice:8000
+  #     - OPENVOICE_DEFAULT_VOICE=demo_speaker0
+  #   depends_on:
+  #     - openvoice
+  #   restart: unless-stopped
 
   # 4. Open WebUI — интерфейс с поддержкой голоса
   open-webui:
