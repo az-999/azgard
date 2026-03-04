@@ -104,7 +104,7 @@ services:
       - ollama
       - whisper
       - silero-tts
-      - openvoice-adapter
+      # - openvoice-adapter
     restart: unless-stopped
 
 volumes:
