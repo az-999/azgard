@@ -1,5 +1,4 @@
 # docker-compose.yml
-version: '3.8'
 
 services:
   # 1. Ollama — запуск на GPU
@@ -41,29 +40,31 @@ services:
         condition: service_healthy
     restart: "no"
 
-  # 2. Whisper ASR — распознавание речи
+  # 2. Whisper ASR — распознавание речи (OpenAI-совместимый API)
   whisper:
-    image: rhasspy/wav2vec2:latest
+    image: onerahmet/openai-whisper-asr-webservice:latest-gpu
     container_name: whisper-asr
     ports:
-      - "5001:5000"
-    command: >
-      python3 -m rhasspy-whisper-hermes
-      --model tiny
-      --language ru
-      --uri 'http://0.0.0.0:5000'
+      - "5001:9000"
+    environment:
+      - ASR_ENGINE=openai_whisper
+      - ASR_MODEL=base
+      - ASR_LANGUAGE=ru
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     restart: unless-stopped
 
-  # 3. Silero TTS — синтез речи (фиксированные голоса)
+  # 3. TTS — синтез речи (Edge TTS, OpenAI-совместимый API, есть русские голоса)
   silero-tts:
-    image: ghcr.io/zhuravlev/silero-tts:cpu-latest
+    image: travisvn/openai-edge-tts:latest
     container_name: silero-tts
     ports:
-      - "5002:8000"
-    environment:
-      - LANG=ru
-      - VOICE=aidar_v3
-      - SAMPLE_RATE=24000
+      - "5002:5050"
     restart: unless-stopped
 
   # 3.1 OpenVoice — клонирование голоса по образцу (загрузите образец — ассистент будет говорить этим голосом)
@@ -97,8 +98,8 @@ services:
       - openwebui_data:/app/backend/data
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
-      - WHISPER_API_BASE_URL=http://whisper:5000
-      - TTS_API_BASE_URL=http://silero-tts:8000
+      - WHISPER_API_BASE_URL=http://whisper:9000
+      - TTS_API_BASE_URL=http://silero-tts:5050
     depends_on:
       - ollama
       - whisper
