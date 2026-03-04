@@ -28,23 +28,17 @@ services:
       start_period: 15s
     restart: unless-stopped
 
-  # 2. Whisper ASR — распознавание речи (OpenAI-совместимый API)
+  # 2. Whisper ASR — распознавание речи (CPU: образ GPU не совместим с частью видеокарт)
+  # Образ может слушать на 9000 или 9080 — если 401/транскрипция не работают, проверьте логи: Uvicorn running on 0.0.0.0:???
   whisper:
-    image: onerahmet/openai-whisper-asr-webservice:latest-gpu
+    image: onerahmet/openai-whisper-asr-webservice:latest
     container_name: whisper-asr
     ports:
-      - "5001:9000"
+      - "5001:9080"
     environment:
       - ASR_ENGINE=openai_whisper
       - ASR_MODEL=base
       - ASR_LANGUAGE=ru
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     restart: unless-stopped
 
   # 3. TTS — синтез речи (Edge TTS, OpenAI-совместимый API, есть русские голоса)
@@ -86,8 +80,10 @@ services:
       - openwebui_data:/app/backend/data
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
-      - WHISPER_API_BASE_URL=http://whisper:9000
+      - WHISPER_API_BASE_URL=http://whisper:9080
       - TTS_API_BASE_URL=http://silero-tts:5050
+      # Чтобы голосовые запросы (транскрипция) не давали 401 при отправке с фронта
+      - ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false
     depends_on:
       - ollama
       - whisper
