@@ -1,0 +1,16 @@
+# Образ для GPU с архитектурой sm_120 (RTX 50xx / Blackwell).
+# Собирать после базового образа: docker compose build qwen3-tts && docker build -f Dockerfile.qwen3-tts-sm120 -t qwen3-tts:local .
+# См. readme.md.
+
+ARG BASE_IMAGE=qwen3-tts:local
+FROM ${BASE_IMAGE}
+
+USER root
+
+# Удаляем flash-attn (собран под старый PyTorch), ставим PyTorch nightly с поддержкой sm_120 (CUDA 12.8)
+RUN pip uninstall -y flash-attn 2>/dev/null || true \
+ && pip install --no-cache-dir --pre torch torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128 \
+    --force-reinstall
+
+USER appuser
