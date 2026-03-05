@@ -1,0 +1,96 @@
+# docker-compose.yml
+
+services:
+  # 1. Ollama — запуск на GPU
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_NUM_PARALLEL=8
+      - OLLAMA_MAX_LOADED_MODELS=1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # 2. Whisper ASR — распознавание речи (CPU: образ GPU не совместим с частью видеокарт)
+  # Образ может слушать на 9000 или 9080 — если 401/транскрипция не работают, проверьте логи: Uvicorn running on 0.0.0.0:???
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: whisper-asr
+    ports:
+      - "5001:9080"
+    environment:
+      - ASR_ENGINE=openai_whisper
+      - ASR_MODEL=base
+      - ASR_LANGUAGE=ru
+    restart: unless-stopped
+
+  # 3. TTS — синтез речи (Edge TTS, OpenAI-совместимый API, есть русские голоса)
+  silero-tts:
+    image: travisvn/openai-edge-tts:latest
+    container_name: silero-tts
+    ports:
+      - "5002:5050"
+    restart: unless-stopped
+
+  # 3.1 OpenVoice — клонирование голоса по образцу (загрузите образец — ассистент будет говорить этим голосом)
+  # openvoice:
+  #   image: valyriantech/openvoice_server:latest
+  #   container_name: openvoice
+  #   ports:
+  #     - "5003:8000"
+  #   restart: unless-stopped
+
+  # # 3.2 Адаптер OpenVoice → формат API Open WebUI (указывайте в TTS имя загруженного голоса)
+  # openvoice-adapter:
+  #   build: ./openvoice-adapter
+  #   container_name: openvoice-adapter
+  #   ports:
+  #     - "5010:5010"
+  #   environment:
+  #     - OPENVOICE_URL=http://openvoice:8000
+  #     - OPENVOICE_DEFAULT_VOICE=demo_speaker0
+  #   depends_on:
+  #     - openvoice
+  #   restart: unless-stopped
+
+  # 4. Open WebUI — интерфейс с поддержкой голоса
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_API_BASE_URL=http://whisper:9080
+      - TTS_API_BASE_URL=http://silero-tts:5050
+      # Чтобы голосовые запросы (транскрипция) не давали 401 при отправке с фронта
+      - ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false
+    depends_on:
+      - ollama
+      - whisper
+      - silero-tts
+      # - openvoice-adapter
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  openwebui_data:

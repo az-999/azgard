@@ -10,8 +10,8 @@ sudo systemctl restart docker
 # 2. Запустите стек
 docker compose up -d
 
-# 3. Скачайте модель (выполняется один раз)
-docker exec -it ollama ollama pull qwen3:8b
+# 3. Скачать модель Qwen3-8B в Ollama (один раз, после старта ollama)
+docker exec ollama ollama pull qwen3:8b
 
 # 4. Проверьте GPU
 docker exec -it ollama nvidia-smi
