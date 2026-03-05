@@ -41,12 +41,40 @@ services:
       - ASR_LANGUAGE=ru
     restart: unless-stopped
 
-  # 3. TTS — синтез речи (Edge TTS, OpenAI-совместимый API, есть русские голоса)
-  silero-tts:
-    image: travisvn/openai-edge-tts:latest
-    container_name: silero-tts
+  # 3. TTS — Qwen3-TTS-12Hz-1.7B-CustomVoice, русский: в Open WebUI укажите модель tts-1-ru (или tts-1-hd-ru)
+  # Для RTX 50xx (sm_120): после первой сборки пересобрать с PyTorch nightly: docker build -f Dockerfile.qwen3-tts-sm120 -t qwen3-tts:local . (см. readme)
+  qwen3-tts:
+    build:
+      context: https://github.com/groxaxo/Qwen3-TTS-Openai-Fastapi.git#main
+      dockerfile: Dockerfile
+      target: production
+    image: qwen3-tts:local
+    container_name: qwen3-tts
+    user: "0:0"
     ports:
-      - "5002:5050"
+      - "5002:8880"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8880
+      - TTS_BACKEND=official
+      - TTS_MODEL_NAME=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+      - TTS_WARMUP_ON_START=false
+    volumes:
+      - qwen3_tts_hf_cache:/home/appuser/.cache/huggingface
+    command: ["sh", "-c", "chown -R appuser:appuser /home/appuser/.cache 2>/dev/null || true; exec runuser -u appuser -- env HOST=0.0.0.0 PORT=8880 WORKERS=1 python -m api.main"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8880/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
 
   # 3.1 OpenVoice — клонирование голоса по образцу (загрузите образец — ассистент будет говорить этим голосом)
@@ -81,16 +109,19 @@ services:
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - WHISPER_API_BASE_URL=http://whisper:9080
-      - TTS_API_BASE_URL=http://silero-tts:5050
+      - TTS_API_BASE_URL=http://qwen3-tts:8880
+      # Модель tts-1-ru — русский язык для Qwen3-TTS (tts-1-hd-ru для качества выше)
+      - AUDIO_TTS_MODEL=tts-1-ru
       # Чтобы голосовые запросы (транскрипция) не давали 401 при отправке с фронта
       - ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false
     depends_on:
       - ollama
       - whisper
-      - silero-tts
+      - qwen3-tts
       # - openvoice-adapter
     restart: unless-stopped
 
 volumes:
   ollama_data:
   openwebui_data:
+  qwen3_tts_hf_cache:
