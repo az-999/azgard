@@ -23,6 +23,14 @@ sudo reboot
 sudo apt update
 sudo apt install docker-compose-plugin -y
 
+# Мой комп
+
+Beelink Мини-ПК GTi15 Ultra игровой (Intel Core Ultra 9 285H, RAM 96 ГБ, SSD 2048 ГБ, Intel Arc 140T, Windows 11 Pro), серебристый
++
+Beelink Док-станция для GTi14/GTi12, EX Pro
++
+Видеокарта GeForce RTX 5070 Ti GAMINGPRO OC 16G
+
 # Газ Отопление
 
 Отопление газовыми баллонами
