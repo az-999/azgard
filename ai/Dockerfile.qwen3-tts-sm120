@@ -7,10 +7,20 @@ FROM ${BASE_IMAGE}
 
 USER root
 
+# Увеличиваем таймаут и ретраи pip при нестабильной сети
+ENV PIP_DEFAULT_TIMEOUT=600
+ENV PIP_RETRIES=15
+
 # Удаляем flash-attn (собран под старый PyTorch), ставим PyTorch nightly с поддержкой sm_120 (CUDA 12.8)
-RUN pip uninstall -y flash-attn 2>/dev/null || true \
- && pip install --no-cache-dir --pre torch torchaudio \
+RUN pip uninstall -y flash-attn 2>/dev/null || true
+
+# Ставим по одному пакету, чтобы при обрыве не перекачивать оба
+RUN pip install --no-cache-dir --pre torch \
     --index-url https://download.pytorch.org/whl/nightly/cu128 \
-    --force-reinstall
+    --timeout 600 --retries 15 --force-reinstall
+
+RUN pip install --no-cache-dir --pre torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128 \
+    --timeout 600 --retries 15 --force-reinstall
 
 USER appuser
