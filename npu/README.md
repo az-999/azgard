@@ -22,12 +22,12 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Переменные окружения (значения по умолчанию можно не задавать, они уже прописаны в коде/образе):
+Переменные окружения (значения по умолчанию можно не задавать, они уже прописаны в коде/образе). Кеш моделей Hugging Face хранится в **npu/hf-cache**:
 
 ```bash
 export MODEL_ID="Qwen/Qwen2-7B-Instruct"       # или, например: OpenVINO/Qwen2.5-7B-Instruct-int4-ov
 export OV_DEVICE="AUTO"                        # AUTO | CPU | GPU | NPU
-export HF_HOME="$PWD/hf-cache"                 # папка для кеша моделей
+export HF_HOME="$PWD/hf-cache"                 # при запуске из npu — кеш в npu/hf-cache
 ```
 
 Запуск сервера:
@@ -47,17 +47,21 @@ cd /home/svyat/azgard/npu
 docker build -t ov-qwen2-assistant .
 ```
 
-Запуск (минимальная команда):
+Запуск (минимальная команда). Кеш моделей — **npu/hf-cache**.
+
+Из корня репозитория (каталог `azgard`):
 
 ```bash
 docker run --rm \
   -p 8000:8000 \
-  -e MODEL_ID="Qwen/Qwen2-7B-Instruct" \
+  -e MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov" \
   -e OV_DEVICE="AUTO" \
-  -v "$PWD/hf-cache:/app/hf-cache" \
+  -v "$PWD/npu/hf-cache:/app/hf-cache" \
   --name ov-qwen2-assistant \
   ov-qwen2-assistant
 ```
+
+Либо из каталога `npu`: тогда монтирование кеша — `-v "$PWD/hf-cache:/app/hf-cache"` (путь на хосте снова npu/hf-cache).
 
 Рекомендации:
 

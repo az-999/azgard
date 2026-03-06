@@ -9,7 +9,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
-from .model import load_model
 from .schemas import ChatRequest, ChatResponse, Message
 
 
@@ -31,7 +30,8 @@ if static_dir.exists():
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    # Прогреваем загрузку модели в фоне
+    # Ленивый импорт: тяжёлые optimum/openvino не грузятся при импорте app.main
+    from .model import load_model
     load_model()
 
 
@@ -44,6 +44,7 @@ async def root() -> HTMLResponse:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
+    from .model import load_model
     tokenizer, model = load_model()
 
     messages: List[dict] = [m.model_dump() for m in request.messages]
