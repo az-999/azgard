@@ -22,7 +22,7 @@ services:
       - ha_network
 
   mariadb:
-    image: "mariadb:10.11"
+    image: "dockerhub.timeweb.cloud/library/mariadb:10.11"
     container_name: mariadb
     restart: unless-stopped
     volumes:
