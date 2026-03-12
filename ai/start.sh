@@ -12,6 +12,11 @@ docker compose up -d
 
 # 3. Скачать модель Qwen3-8B в Ollama (один раз, после старта ollama)
 docker exec ollama ollama pull qwen3:8b
+docker exec ollama ollama pull mychen76/qwen3_cline_roocode:
+docker exec ollama ollama pull deepcoder:14b
+docker exec ollama ollama pull qwen2.5-coder:14b
+docker exec ollama ollama pull qwen3-coder:30b
+docker exec ollama ollama pull deepseek-coder:6.7b
 
 # 4. Проверьте GPU
 docker exec -it ollama nvidia-smi

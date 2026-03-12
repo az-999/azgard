@@ -6,7 +6,7 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
-      - "11434:11434"
+      - "11430:11434"
     volumes:
       - ollama_data:/root/.ollama
     deploy:
@@ -20,6 +20,10 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - OLLAMA_NUM_PARALLEL=8
       - OLLAMA_MAX_LOADED_MODELS=1
+      # Ниже 5m бывает баг: модель в VRAM, но инференс на CPU (issue #7323)
+      - OLLAMA_KEEP_ALIVE=10m
+      # Логи: id=GPU vs id=cpu, "offloaded X/X layers to GPU"
+      - OLLAMA_DEBUG=1
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 5s
@@ -88,9 +92,14 @@ services:
     container_name: open-webui
     ports:
       - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - openwebui_data:/app/backend/data
     environment:
+      # По умолчанию — Ollama в Docker. Если в Docker GPU 0% (RTX 50 + WSL2), переключи на Windows Ollama:
+      # - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # и запускай без сервиса ollama: docker compose up -d whisper qwen3-tts open-webui
       - OLLAMA_BASE_URL=http://ollama:11434
       - WHISPER_API_BASE_URL=http://whisper:9080
       # Backend TTS = Qwen3-TTS (OpenAI-совместимый API). Без AUDIO_TTS_ENGINE=openai в списке только «Браузер» и «По умолчанию» без backend.

@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY app ./app
 
 # Значения по умолчанию можно переопределить через docker run / compose
-ENV MODEL_ID=Qwen/Qwen2-7B-Instruct \
+ENV MODEL_ID=OpenVINO/Qwen2.5-7B-Instruct-int4-ov \
     OV_DEVICE=AUTO \
     HF_HOME=/app/hf-cache
 
