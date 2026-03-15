@@ -27,6 +27,12 @@ ota:
 logger:
   level: INFO
 
+# Время по SNTP (нужно для сенсора "Last Power Restore")
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Moscow
+
 # ============================================
 # ДАТЧИК НАЛИЧИЯ СЕТИ 220V
 # ============================================
@@ -80,7 +86,7 @@ script:
   - id: handle_power_restored
     then:
       - logger.log: "🔌 Сеть восстановилась"
-      - sensor.publish:
+      - sensor.template.publish:
           id: last_power_restore
           state: !lambda 'return id(sntp_time).now().timestamp;'
 
