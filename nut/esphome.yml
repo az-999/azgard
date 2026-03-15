@@ -36,10 +36,11 @@ time:
 
 # ============================================
 # ДАТЧИК НАЛИЧИЯ СЕТИ 220V
+# GPIO4 — свободный пин (GPIO8/9 на SuperMini заняты LED и Boot)
 # ============================================
 binary_sensor:
   - platform: gpio
-    pin: GPIO9
+    pin: GPIO4
     name: "Power Grid 220V"
     id: grid_power
     device_class: power
@@ -58,10 +59,11 @@ binary_sensor:
 
 # ============================================
 # РЕЛЕ УПРАВЛЕНИЯ ИБП (эмуляция кнопки)
+# GPIO5 — свободный пин (GPIO8/9 на SuperMini заняты LED и Boot)
 # ============================================
 switch:
   - platform: gpio
-    pin: GPIO8
+    pin: GPIO5
     name: "UPS Power Button"
     id: ups_relay
     icon: mdi:power
