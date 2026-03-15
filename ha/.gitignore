@@ -2,6 +2,8 @@
 # 🔐 БЕЗОПАСНОСТЬ (Никогда не коммитьте!)
 # ─────────────────────────────────────────────────────────────
 secrets.yaml
+config/secrets.yaml
+esphome/secrets.yaml
 *.secret
 *.key
 *.pem
