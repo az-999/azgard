@@ -13,8 +13,8 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
-    ssid: "UPS-Monitor Fallback"
-    password: "FallbackPass123"
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
 
 api:
   encryption:
