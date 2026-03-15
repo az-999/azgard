@@ -12,9 +12,10 @@ esp32:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  # Точка доступа (fallback), если не удалось подключиться к Wi‑Fi — подключаетесь к ней с телефона/ПК для настройки.
   ap:
-    ssid: !secret wifi_ssid
-    password: !secret wifi_password
+    ssid: "UPS-Monitor Fallback"
+    password: !secret wifi_ap_password
 
 api:
   encryption:
