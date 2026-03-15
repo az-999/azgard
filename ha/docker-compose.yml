@@ -69,6 +69,7 @@ services:
       - "6052:6052"
     volumes:
       - ./esphome:/config
+      - ./config/secrets.yaml:/config/secrets.yaml:ro
       - /etc/localtime:/etc/localtime:ro
       # Раскомментируйте для прошивки по USB (подставьте свой устройство, например /dev/ttyUSB0):
       # - /run/udev:/run/udev:ro
