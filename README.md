@@ -8,8 +8,6 @@ https://chat.qwen.ai/s/aa35116e-1f4d-4b60-a00a-635d20f2910a?fev=0.2.9
 
 sudo chown -R $USER:$USER /home/az/homeassistant/config
 
-usb_max_current_enable=1
-
 # install
 
 sudo apt update && sudo apt upgrade -y

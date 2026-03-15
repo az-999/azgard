@@ -60,6 +60,29 @@ services:
     networks:
       - ha_network
 
+  esphome:
+    image: ghcr.io/esphome/esphome:stable
+    container_name: esphome
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "6052:6052"
+    volumes:
+      - ./esphome:/config
+      - /etc/localtime:/etc/localtime:ro
+      # Раскомментируйте для прошивки по USB (подставьте свой устройство, например /dev/ttyUSB0):
+      # - /run/udev:/run/udev:ro
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    environment:
+      - TZ=Europe/Moscow
+      - USERNAME=admin
+      - PASSWORD=admin
+      # Если индикация «онлайн» в дашборде не работает — раскомментируйте:
+      # - ESPHOME_DASHBOARD_USE_PING=true
+    networks:
+      - ha_network
+
 networks:
   ha_network:
     driver: bridge

@@ -33,3 +33,13 @@ Home Assistant установлен на Raspberry Pi 5 4Gb на Raspberry Pi OS
 
 - На RPi5 иногда помогают обновление прошивки и ядра: `sudo rpi-update` (осторожно, тестовые ядра) или, наоборот, откат на более стабильное ядро.
 - Альтернатива без прямого доступа к адаптеру: [Bluetooth proxy на ESP32](https://esphome.io/components/bluetooth_proxy.html) — HA подключается к прокси по Wi‑Fi, Bluetooth работает на ESP32.
+
+## ESPHome
+
+ESPHome запущен отдельным контейнером (в Docker-установке HA аддон недоступен).
+
+- **Дашборд:** после `docker compose up -d` откройте в браузере `http://<IP_хоста>:6052`.
+- **Логин/пароль:** по умолчанию `USERNAME=admin`, `PASSWORD=admin` — см. `docker-compose.yml`, секция `esphome`; лучше сменить в переменных окружения.
+- **Конфиги:** хранятся в каталоге `ha/esphome/` (YAML-файлы устройств).
+- **Прошивка по USB:** раскомментируйте в `docker-compose.yml` блок `devices` и укажите свой порт (например `/dev/ttyUSB0`), затем пересоберите контейнеры.
+- В Home Assistant добавьте интеграцию **ESPHome** (Настройки → Устройства и службы) — устройства, настроенные в ESPHome с API Home Assistant, появятся автоматически после прошивки.
