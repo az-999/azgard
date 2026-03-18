@@ -29,6 +29,12 @@ Beelink Док-станция для GTi14/GTi12, EX Pro
 +
 Видеокарта GeForce RTX 5070 Ti GAMINGPRO OC 16G
 
+
+ipconfig /flushdns
+netsh int ip reset
+netsh winsock reset
+
+
 # Газ Отопление
 
 Отопление газовыми баллонами
