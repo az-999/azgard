@@ -7,6 +7,7 @@
 - `app/` — код FastAPI‑бэкенда и web‑интерфейса
   - `app/main.py` — API (`/api/chat`) и раздача статики `/static`
   - `app/model.py` — загрузка модели через `OVModelForCausalLM`
+  - `app/preload.py` — **отдельная команда** предзагрузки модели в кеш (без веб‑сервера)
   - `app/config.py` — настройки (MODEL_ID, OV_DEVICE и т.п.)
   - `app/static/index.html` — SPA‑чат
 - `requirements.txt` — Python‑зависимости
@@ -38,6 +39,28 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Открыть в браузере: `http://localhost:8000/static/`.
 
+### Предзагрузка модели (отдельно, в консоли)
+
+Чтобы **спокойно скачать и подготовить** модель до запуска UI, используйте ту же `MODEL_ID` / `HF_HOME` / `OV_DEVICE`, что и у сервера:
+
+```bash
+cd /path/to/azgard/npu
+export HF_HOME="$PWD/hf-cache"
+export MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov"
+export OV_DEVICE="CPU"   # в Docker без NPU надёжнее CPU
+python -m app.preload
+```
+
+Либо скрипт:
+
+```bash
+cd /path/to/azgard/npu
+chmod +x preload-model.sh   # один раз
+./preload-model.sh
+```
+
+После строки `OK: модель скачана/подготовлена` можно запускать `uvicorn` — первый ответ в чате не будет ждать полной загрузки с нуля (остаётся только инициализация в памяти процесса).
+
 ### Запуск через Docker
 
 Сборка образа:
@@ -47,6 +70,20 @@ cd /home/svyat/azgard/npu
 docker build -t ov-qwen2-assistant .
 ```
 
+**Предзагрузка в Docker** (один раз, пока качается в `npu/hf-cache`; порт 8000 не нужен):
+
+```bash
+# из корня репозитория azgard
+docker run --rm \
+  -e MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov" \
+  -e OV_DEVICE="CPU" \
+  -v "$PWD/npu/hf-cache:/app/hf-cache" \
+  ov-qwen2-assistant \
+  python -m app.preload
+```
+
+Затем обычный запуск контейнера с тем же монтированием `hf-cache` (см. ниже).
+
 Запуск (минимальная команда). Кеш моделей — **npu/hf-cache**.
 
 Из корня репозитория (каталог `azgard`):
@@ -55,7 +92,7 @@ docker build -t ov-qwen2-assistant .
 docker run --rm \
   -p 8000:8000 \
   -e MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov" \
-  -e OV_DEVICE="AUTO" \
+  -e OV_DEVICE="CPU" \
   -v "$PWD/npu/hf-cache:/app/hf-cache" \
   --name ov-qwen2-assistant \
   ov-qwen2-assistant

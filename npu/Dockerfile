@@ -17,8 +17,10 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY app ./app
 
 # Значения по умолчанию можно переопределить через docker run / compose
+# В Docker обычно нет прямого доступа к Intel NPU; AUTO иногда долго «висит» на выборе устройства.
+# Для стабильности по умолчанию CPU; на хосте с NPU можно переопределить: -e OV_DEVICE=NPU
 ENV MODEL_ID=OpenVINO/Qwen2.5-7B-Instruct-int4-ov \
-    OV_DEVICE=AUTO \
+    OV_DEVICE=CPU \
     HF_HOME=/app/hf-cache
 
 EXPOSE 8000

@@ -710,10 +710,31 @@
         }
       });
 
+      async function pollModelStatus() {
+        try {
+          const res = await fetch("/api/model-status");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.error) {
+            setStatus(false, "Ошибка модели: " + String(data.error).slice(0, 120) + "…");
+            return;
+          }
+          if (data.ready) {
+            setStatus(true, "Модель загружена, можно писать");
+            return;
+          }
+          setStatus(
+            false,
+            "Модель загружается в фоне (CPU/OpenVINO, первый раз 5–30+ мин). Смотри логи Docker…"
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       window.addEventListener("load", () => {
-        setTimeout(() => {
-          setStatus(false, "Ожидаем первый запрос (модель может грузиться до нескольких минут)…");
-        }, 2000);
+        pollModelStatus();
+        setInterval(pollModelStatus, 3000);
       });
     </script>
   </body>

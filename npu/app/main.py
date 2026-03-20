@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+import threading
 from typing import List
 from pathlib import Path
 
@@ -11,6 +14,12 @@ from fastapi.staticfiles import StaticFiles
 from .config import get_settings
 from .schemas import ChatRequest, ChatResponse, Message
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 app = FastAPI(title=settings.project_name)
@@ -28,11 +37,30 @@ if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir), html=True), name="static")
 
 
+def _warmup_model_in_background() -> None:
+    """Фоновая подгрузка модели: UI открывается сразу, первый ответ приходит быстрее."""
+
+    def _run() -> None:
+        try:
+            from .model import load_model
+
+            load_model()
+        except Exception:
+            logger.exception("Фоновая загрузка модели не удалась")
+
+    threading.Thread(target=_run, name="model-warmup", daemon=True).start()
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
-    # Ленивый импорт: тяжёлые optimum/openvino не грузятся при импорте app.main
-    from .model import load_model
-    load_model()
+    _warmup_model_in_background()
+
+
+@app.get("/api/model-status")
+async def model_status() -> dict:
+    from .model import get_model_status
+
+    return get_model_status()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -42,9 +70,9 @@ async def root() -> HTMLResponse:
     )
 
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
+def _chat_sync(request: ChatRequest) -> ChatResponse:
     from .model import load_model
+
     tokenizer, model = load_model()
 
     messages: List[dict] = [m.model_dump() for m in request.messages]
@@ -72,4 +100,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
     text = tokenizer.decode(generated_ids, skip_special_tokens=True)
 
     return ChatResponse(reply=text.strip())
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest) -> ChatResponse:
+    # Тяжёлая синхронная работа (OpenVINO + generate) — в отдельном потоке, не блокируем event loop.
+    return await asyncio.to_thread(_chat_sync, request)
 
