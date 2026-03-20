@@ -199,6 +199,70 @@
         box-shadow: 0 0 14px rgba(34, 197, 94, 0.9);
       }
 
+      /* Прогресс загрузки модели */
+      .load-progress-panel {
+        padding: 0 24px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        background: rgba(2, 6, 23, 0.5);
+      }
+
+      .load-progress-panel[hidden] {
+        display: none !important;
+      }
+
+      .load-progress-track {
+        position: relative;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(31, 41, 55, 0.95);
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .load-progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0284c7, #22c55e);
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        transition: width 0.25s ease-out;
+      }
+
+      .load-progress-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 35%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.85), transparent);
+        animation: load-slide 1.4s ease-in-out infinite;
+      }
+
+      @keyframes load-slide {
+        0% {
+          transform: translateX(-120%);
+        }
+        100% {
+          transform: translateX(380%);
+        }
+      }
+
+      .load-progress-meta {
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .load-progress-meta strong {
+        color: #7dd3fc;
+        font-weight: 600;
+      }
+
       .body {
         flex: 1;
         display: flex;
@@ -470,6 +534,10 @@
           padding-inline: 16px;
         }
 
+        .load-progress-panel {
+          padding-inline: 16px;
+        }
+
         .body {
           padding-inline: 10px;
         }
@@ -514,6 +582,13 @@
           </div>
         </div>
       </header>
+      <div class="load-progress-panel" id="load-progress-panel" hidden>
+        <div class="load-progress-track" id="load-progress-track" aria-label="Прогресс загрузки модели">
+          <div class="load-progress-fill" id="load-progress-fill"></div>
+          <div class="load-progress-slide" id="load-progress-slide" hidden></div>
+        </div>
+        <div class="load-progress-meta" id="load-progress-meta"></div>
+      </div>
       <main class="body">
         <section class="messages" id="messages"></section>
         <section class="input-area">
@@ -547,6 +622,61 @@
       const sendBtn = document.getElementById("send");
       const statusDot = document.getElementById("status-dot");
       const statusText = document.getElementById("status-text");
+      const loadProgressPanel = document.getElementById("load-progress-panel");
+      const loadProgressFill = document.getElementById("load-progress-fill");
+      const loadProgressSlide = document.getElementById("load-progress-slide");
+      const loadProgressMeta = document.getElementById("load-progress-meta");
+
+      function formatBytes(n) {
+        if (n == null || n === "" || Number.isNaN(n)) return "—";
+        let x = Number(n);
+        const u = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+        let i = 0;
+        while (x >= 1024 && i < u.length - 1) {
+          x /= 1024;
+          i++;
+        }
+        return i === 0 ? `${Math.round(x)} ${u[i]}` : `${x.toFixed(1)} ${u[i]}`;
+      }
+
+      /**
+       * @param {boolean} ready
+       * @param {object|null} progress — из /api/model-status
+       */
+      function updateLoadProgressBar(ready, progress) {
+        if (ready) {
+          loadProgressPanel.hidden = true;
+          loadProgressFill.style.width = "100%";
+          loadProgressSlide.hidden = true;
+          loadProgressMeta.textContent = "";
+          return;
+        }
+
+        loadProgressPanel.hidden = false;
+        const p = progress || {};
+        const pct =
+          typeof p.percent === "number" && !Number.isNaN(p.percent)
+            ? Math.min(100, Math.max(0, p.percent))
+            : null;
+
+        if (pct != null) {
+          loadProgressFill.style.width = pct + "%";
+          loadProgressSlide.hidden = true;
+          loadProgressMeta.innerHTML =
+            `<span><strong>${pct.toFixed(1)}%</strong> — скачивание с Hugging Face</span>` +
+            `<span>${formatBytes(p.downloaded_bytes)} / ${formatBytes(p.total_bytes)}</span>`;
+        } else {
+          loadProgressFill.style.width = "0%";
+          loadProgressSlide.hidden = false;
+          const phase = p.phase || "";
+          const meta =
+            phase === "openvino"
+              ? `<span><strong>Этап OpenVINO</strong> — без процентов, только ожидание</span>`
+              : `<span><strong>${phase || "загрузка"}</strong></span>`;
+          loadProgressMeta.innerHTML =
+            meta + `<span>${formatBytes(p.downloaded_bytes)} / ${formatBytes(p.total_bytes)}</span>`;
+        }
+      }
 
       const state = {
         messages: [
@@ -564,6 +694,26 @@
         state.modelReady = ready;
         statusText.textContent = text;
         statusDot.classList.toggle("ready", ready);
+      }
+
+      function applyModelStatusPayload(data) {
+        if (data.error) {
+          setStatus(false, "Ошибка модели: " + String(data.error).slice(0, 120) + "…");
+          updateLoadProgressBar(false, { phase: "error", percent: null });
+          return;
+        }
+        if (data.ready) {
+          setStatus(true, "Модель загружена, можно писать");
+          updateLoadProgressBar(true, data.progress);
+          return;
+        }
+        const p = data.progress || {};
+        const line =
+          p.display_message ||
+          p.message ||
+          (p.percent != null ? `Скачивание: ${Number(p.percent).toFixed(1)}%` : "");
+        setStatus(false, line || "Загрузка модели…");
+        updateLoadProgressBar(false, p);
       }
 
       function appendMessage(role, content, { temp } = {}) {
@@ -686,6 +836,7 @@
           if (!state.modelReady) {
             setStatus(true, "Модель готова к работе");
           }
+          updateLoadProgressBar(true, {});
         } catch (err) {
           console.error(err);
           replaceTyping(
@@ -715,26 +866,17 @@
           const res = await fetch("/api/model-status");
           if (!res.ok) return;
           const data = await res.json();
-          if (data.error) {
-            setStatus(false, "Ошибка модели: " + String(data.error).slice(0, 120) + "…");
-            return;
-          }
-          if (data.ready) {
-            setStatus(true, "Модель загружена, можно писать");
-            return;
-          }
-          setStatus(
-            false,
-            "Модель загружается в фоне (CPU/OpenVINO, первый раз 5–30+ мин). Смотри логи Docker…"
-          );
+          applyModelStatusPayload(data);
         } catch (e) {
           console.error(e);
         }
       }
 
       window.addEventListener("load", () => {
+        loadProgressPanel.hidden = false;
+        updateLoadProgressBar(false, { phase: "idle" });
         pollModelStatus();
-        setInterval(pollModelStatus, 3000);
+        setInterval(pollModelStatus, 800);
       });
     </script>
   </body>

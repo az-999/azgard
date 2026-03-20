@@ -9,7 +9,10 @@
   - `app/model.py` — загрузка модели через `OVModelForCausalLM`
   - `app/preload.py` — **отдельная команда** предзагрузки модели в кеш (без веб‑сервера)
   - `app/config.py` — настройки (MODEL_ID, OV_DEVICE и т.п.)
+  - `app/hf_progress.py` — прогресс скачивания с Hugging Face (логи + поле `progress` в `/api/model-status`)
+  - `app/hf_console.py` — **консоль**: скачивание с нормальным tqdm и сброс кеша (`python -m app.hf_console …`)
   - `app/static/index.html` — SPA‑чат
+  - `hf-download.sh` / `hf-reset.sh` — обёртки над `hf_console`
 - `requirements.txt` — Python‑зависимости
 - `Dockerfile` — образ с OpenVINO‑ассистентом
 
@@ -39,6 +42,18 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Открыть в браузере: `http://localhost:8000/static/`.
 
+### Прогресс загрузки
+
+- **Скачивание с Hugging Face:** в консоль / **логи Docker** периодически пишутся строки вида  
+  `HF: 12.3% (100 МБ / 800 МБ) …` (не чаще чем раз в ~2 с или при изменении процента на ~2%).
+- **Веб:** под шапкой отображается **полоса прогресса** — заполняется по процентам при скачивании с HF; на этапах без процентов (OpenVINO и т.д.) показывается **бегущая анимация**.
+- **API:** `GET /api/model-status` возвращает объект `progress`:  
+  `phase`, `message`, `percent` (если известен размер), `downloaded_bytes`, `total_bytes`, `current_file`.  
+  Веб‑интерфейс подставляет `progress.message` в статус в шапке.
+- **После скачивания файлов** идёт этап **OpenVINO** (загрузка/компиляция в рантайме) — для него проценты не считаются, в статусе показывается текст вроде «Загрузка / компиляция OpenVINO…». В логах раз в ~45 с пишется строка `OpenVINO: загрузка/компиляция всё ещё идёт…`, пока этап не завершится.
+- Если **файлы уже в кеше**, этап HF почти незаметен — **строк `HF: …%` в логах может не быть** (скачивание не повторяется).
+- В Docker нужен **актуальный код** (`docker build …` заново или монтирование `-v ./npu/app:/app/app`), иначе в ответе API не будет поля `progress` в старом образе.
+
 ### Предзагрузка модели (отдельно, в консоли)
 
 Чтобы **спокойно скачать и подготовить** модель до запуска UI, используйте ту же `MODEL_ID` / `HF_HOME` / `OV_DEVICE`, что и у сервера:
@@ -60,6 +75,68 @@ chmod +x preload-model.sh   # один раз
 ```
 
 После строки `OK: модель скачана/подготовлена` можно запускать `uvicorn` — первый ответ в чате не будет ждать полной загрузки с нуля (остаётся только инициализация в памяти процесса).
+
+### Консоль: скачивание с прогрессом и сброс кеша
+
+Отдельно от веб‑сервера — **нормальные полосы tqdm в терминале** (файлы и при необходимости байты), без «ломаных» подписей из веб‑прогресса:
+
+```bash
+cd /path/to/azgard/npu
+export HF_HOME="$PWD/hf-cache"
+export MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov"
+python -m app.hf_console download
+```
+
+**Сброс только текущей модели** (каталоги `hub/models--<org>--<model>…` для `MODEL_ID`) и повторная закачка:
+
+```bash
+python -m app.hf_console reset --yes
+python -m app.hf_console download
+```
+
+**Полный сброс всего `HF_HOME`** (все модели в этом каталоге):
+
+```bash
+python -m app.hf_console reset --all --yes
+```
+
+Скрипты:
+
+```bash
+./hf-download.sh
+./hf-reset.sh --yes
+./hf-reset.sh --all --yes
+```
+
+**Docker** (нужен `-it`, чтобы tqdm рисовал полосу):
+
+Если образ собирали **до** появления `app/hf_console.py`, будет ошибка `No module named app.hf_console`. Сделайте одно из двух:
+
+1. **Пересобрать образ** (из каталога `npu`): `docker build -t ov-qwen2-assistant .`
+2. Либо **смонтировать код** `-v "$PWD/npu/app:/app/app"` (из корня `azgard`), тогда пересборка не нужна.
+
+Пример **скачивания** (корень репозитория `azgard`):
+
+```bash
+docker run --rm -it \
+  -e MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov" \
+  -v "$PWD/npu/hf-cache:/app/hf-cache" \
+  -v "$PWD/npu/app:/app/app" \
+  ov-qwen2-assistant \
+  python -m app.hf_console download
+```
+
+**Сброс всего кеша** в этом томе:
+
+```bash
+docker run --rm -it \
+  -v "$PWD/npu/hf-cache:/app/hf-cache" \
+  -v "$PWD/npu/app:/app/app" \
+  ov-qwen2-assistant \
+  python -m app.hf_console reset --all --yes
+```
+
+После `download` при необходимости выполните полную подготовку OpenVINO: `python -m app.preload`.
 
 ### Запуск через Docker
 

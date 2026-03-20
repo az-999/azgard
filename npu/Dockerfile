@@ -25,5 +25,6 @@ ENV MODEL_ID=OpenVINO/Qwen2.5-7B-Instruct-int4-ov \
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Без access-log: иначе в Docker Desktop засоряется поток одними GET /api/model-status
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
 
