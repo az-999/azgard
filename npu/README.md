@@ -188,3 +188,8 @@ docker run --rm \
 
 После запуска открыть `http://localhost:8000/static/` и общаться с ассистентом.
 
+
+
+
+cd ~/azgard/npu
+docker build -t ov-qwen2-assistant .
