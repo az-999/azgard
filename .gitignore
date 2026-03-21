@@ -4,3 +4,13 @@
 .idea/php.xml
 hf-cache/hub/version.txt
 /npu/hf-cache/hub/version.txt
+
+# Кеш Hugging Face (большие бинарники, не коммитить)
+npu/hf-cache/
+
+# Случайная вложенная копия npu (Docker / ошибка путей)
+npu/npu/
+
+# Python
+__pycache__/
+*.py[cod]
