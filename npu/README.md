@@ -87,6 +87,8 @@ export MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov"
 python -m app.hf_console download
 ```
 
+При старте `download` в **stderr** пишутся: абсолютный путь `HF_HOME`, ссылка на страницу репозитория и ожидаемый каталог `hub/models--…`. Во время загрузки для каждого этапа tqdm — **имя файла/задачи** и **прямая ссылка** `https://huggingface.co/<MODEL_ID>/resolve/main/<путь>` (ветка `main`), чтобы вручную проверить скорость/блокировки. Для подробных сетевых логов библиотеки: `python -m app.hf_console download -v` (`--verbose`). Отключить имена/URL: `--no-log-files`.
+
 **Сброс только текущей модели** (каталоги `hub/models--<org>--<model>…` для `MODEL_ID`) и повторная закачка:
 
 ```bash
@@ -113,9 +115,10 @@ python -m app.hf_console reset --all --yes
 Если образ собирали **до** появления `app/hf_console.py`, будет ошибка `No module named app.hf_console`. Сделайте одно из двух:
 
 1. **Пересобрать образ** (из каталога `npu`): `docker build -t ov-qwen2-assistant .`
-2. Либо **смонтировать код** `-v "$PWD/npu/app:/app/app"` (из корня `azgard`), тогда пересборка не нужна.
+2. Либо **смонтировать код** `-v "…/app:/app/app"`, тогда пересборка не нужна.  
+   **Важно:** пути зависят от того, **откуда** вы запускаете `docker run`. Если вы уже в каталоге `npu/`, то **`$PWD/npu/app` не существует** (получится `npu/npu/app`) — в контейнер смонтируется пустая папка и будет `No module named app.hf_console`.
 
-Пример **скачивания** (корень репозитория `azgard`):
+Пример **скачивания** — из **корня** репозитория `azgard` (`pwd` = `…/azgard`):
 
 ```bash
 docker run --rm -it \
@@ -126,12 +129,30 @@ docker run --rm -it \
   python -m app.hf_console download
 ```
 
-**Сброс всего кеша** в этом томе:
+То же, если вы **уже в** `…/azgard/npu` (`pwd` заканчивается на `/npu`):
 
 ```bash
 docker run --rm -it \
+  -e MODEL_ID="OpenVINO/Qwen2.5-7B-Instruct-int4-ov" \
+  -v "$PWD/hf-cache:/app/hf-cache" \
+  -v "$PWD/app:/app/app" \
+  ov-qwen2-assistant \
+  python -m app.hf_console download -v
+```
+
+**Сброс всего кеша** в этом томе:
+
+```bash
+# из корня azgard:
+docker run --rm -it \
   -v "$PWD/npu/hf-cache:/app/hf-cache" \
   -v "$PWD/npu/app:/app/app" \
+  ov-qwen2-assistant \
+  python -m app.hf_console reset --all --yes
+# из каталога npu/:
+docker run --rm -it \
+  -v "$PWD/hf-cache:/app/hf-cache" \
+  -v "$PWD/app:/app/app" \
   ov-qwen2-assistant \
   python -m app.hf_console reset --all --yes
 ```
