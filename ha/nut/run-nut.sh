@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p /var/run/nut
-chown -R root:nut /var/run/nut || true
+# Debian обычно использует /run/nut для PID/lock, но в контейнере
+# это не всегда создается автоматически.
+mkdir -p /run/nut /var/run/nut
+chown -R root:nut /run/nut /var/run/nut || true
+chmod 775 /run/nut /var/run/nut || true
 
 echo "[NUT] Starting UPS driver(s)..."
 upsdrvctl -u root start
