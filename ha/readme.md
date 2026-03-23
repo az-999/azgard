@@ -44,3 +44,40 @@ ESPHome запущен отдельным контейнером (в Docker-ус
 - **Секреты:** общий файл `ha/config/secrets.yaml` (и для HA, и для ESPHome); в контейнер ESPHome он монтируется как `/config/secrets.yaml`.
 - **Прошивка по USB:** раскомментируйте в `docker-compose.yml` блок `devices` и укажите свой порт (например `/dev/ttyUSB0`), затем пересоберите контейнеры.
 - В Home Assistant добавьте интеграцию **ESPHome** (Настройки → Устройства и службы) — устройства, настроенные в ESPHome с API Home Assistant, появятся автоматически после прошивки.
+
+## NUT (UPS Ippon Back Power Pro 600)
+
+Добавлен отдельный контейнер `nut` в `docker-compose.yml` и базовые конфиги в `ha/nut/`.
+
+1. Запуск:
+   ```bash
+   cd ~/azgard/ha
+   docker compose build nut
+   docker compose up -d nut homeassistant
+   ```
+
+2. Проверка, что ИБП виден:
+   ```bash
+   docker compose logs -f nut
+   ```
+   Если в логах есть ошибки драйвера `blazer_usb`, попробуйте заменить драйвер в `ha/nut/ups.conf`:
+   ```ini
+   driver = usbhid-ups
+   ```
+   затем перезапустить контейнер:
+   ```bash
+   docker compose up -d --build nut
+   ```
+
+3. Проверка ответа NUT:
+   ```bash
+   docker compose exec nut upsc ippon@localhost
+   ```
+   Должен вернуться список параметров (напр. `battery.charge`, `input.voltage`).
+
+4. Home Assistant:
+   - В `ha/config/configuration.yaml` уже добавлен блок `nut:` для подключения к хосту `nut:3493`.
+   - После правок перезапустите HA-контейнер:
+     ```bash
+     docker compose up -d homeassistant
+     ```

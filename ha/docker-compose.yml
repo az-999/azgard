@@ -84,6 +84,23 @@ services:
     networks:
       - ha_network
 
+  nut:
+    build: ./nut
+    container_name: nut
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "3493:3493"
+    volumes:
+      - ./nut:/etc/nut
+      - /dev/bus/usb:/dev/bus/usb
+      - /run/udev:/run/udev:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Europe/Moscow
+    networks:
+      - ha_network
+
 networks:
   ha_network:
     driver: bridge
