@@ -25,7 +25,9 @@
       for:
         seconds: 10
   actions:
-    - action: notify.iavatar
+    - action: notify.send_message
+      target:
+        entity_id: notify.iavatar
       data:
         message: >-
           ⚠️ Пропало входное питание 220V.
