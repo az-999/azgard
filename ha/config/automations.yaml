@@ -20,8 +20,8 @@
   triggers:
     - trigger: template
       value_template: >
-        {{ states('sensor.ippon_ups_ups_status') not in ['unknown','unavailable','none','']
-           and 'OB' in states('sensor.ippon_ups_ups_status') }}
+        {{ states('sensor.ippon_status_data') not in ['unknown','unavailable','none','']
+           and 'OB' in states('sensor.ippon_status_data') }}
       for:
         seconds: 10
   actions:
@@ -30,6 +30,6 @@
         target: !secret telegram_chat_id
         message: >-
           ⚠️ Пропало входное питание 220V.
-          UPS перешел на батарею ({{ states('sensor.ippon_ups_ups_status') }}).
-          Заряд: {{ states('sensor.ippon_ups_battery_charge') }}%.
-          Вход: {{ states('sensor.ippon_ups_input_voltage') }} V.
+          UPS перешел на батарею ({{ states('sensor.ippon_status_data') }}).
+          Заряд: {{ states('sensor.ippon_battery_charge') }}%.
+          Вход: {{ states('sensor.ippon_input_voltage') }} V.
