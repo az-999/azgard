@@ -34,3 +34,45 @@
           UPS перешел на батарею ({{ states('sensor.ippon_status_data') }}).
           Заряд: {{ states('sensor.ippon_battery_charge') }}%.
           Вход: {{ states('sensor.ippon_input_voltage') }} V.
+
+- id: ups_power_restore_telegram
+  alias: "UPS: сеть восстановлена (Telegram)"
+  description: Отправляет уведомление в Telegram, когда входное питание 220V восстановлено.
+  mode: single
+  triggers:
+    - trigger: template
+      value_template: >
+        {{ states('sensor.ippon_status_data') not in ['unknown','unavailable','none','']
+           and 'OL' in states('sensor.ippon_status_data') }}
+      for:
+        seconds: 10
+  actions:
+    - action: telegram_bot.send_message
+      data:
+        target:
+          - !secret telegram_chat_id
+        message: >-
+          ✅ Входное питание 220V восстановлено.
+          UPS вернулся в режим линии ({{ states('sensor.ippon_status_data') }}).
+          Заряд: {{ states('sensor.ippon_battery_charge') }}%.
+          Вход: {{ states('sensor.ippon_input_voltage') }} V.
+
+- id: ups_low_battery_telegram
+  alias: "UPS: низкий заряд аккумулятора (Telegram)"
+  description: Отправляет уведомление в Telegram, когда заряд аккумулятора UPS ниже 30%.
+  mode: single
+  triggers:
+    - trigger: numeric_state
+      entity_id: sensor.ippon_battery_charge
+      below: 30
+      for:
+        minutes: 1
+  actions:
+    - action: telegram_bot.send_message
+      data:
+        target:
+          - !secret telegram_chat_id
+        message: >-
+          🔋 Низкий заряд UPS: {{ states('sensor.ippon_battery_charge') }}%.
+          Статус: {{ states('sensor.ippon_status_data') }}.
+          Вход: {{ states('sensor.ippon_input_voltage') }} V.
