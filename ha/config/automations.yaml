@@ -12,3 +12,23 @@
     - target:
         entity_id: switch.t34_smart_plug_switch_1
       action: switch.turn_off
+
+- id: ups_power_loss_telegram
+  alias: UPS: пропало входное питание (Telegram)
+  description: Отправляет уведомление в Telegram, когда UPS переходит на батарею.
+  mode: single
+  triggers:
+    - trigger: template
+      value_template: >
+        {{ states('sensor.ippon_ups_ups_status') not in ['unknown','unavailable','none','']
+           and 'OB' in states('sensor.ippon_ups_ups_status') }}
+      for:
+        seconds: 10
+  actions:
+    - action: notify.telegram_ups
+      data:
+        message: >-
+          ⚠️ Пропало входное питание 220V.
+          UPS перешел на батарею ({{ states('sensor.ippon_ups_ups_status') }}).
+          Заряд: {{ states('sensor.ippon_ups_battery_charge') }}%.
+          Вход: {{ states('sensor.ippon_ups_input_voltage') }} V.
