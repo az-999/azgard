@@ -13,3 +13,11 @@ recorder:
   db_url: mysql+pymysql://root:password@mariadb/homeassistant?charset=utf8mb4
   purge_keep_days: 30
   commit_interval: 1
+
+rest_command:
+  telegram_send:
+    url: "https://api.telegram.org/bot{{ token }}/sendMessage"
+    method: POST
+    content_type: application/json
+    payload: >
+      {"chat_id":"{{ chat_id }}","text":"{{ message }}"}
