@@ -14,7 +14,7 @@
       action: switch.turn_off
 
 - id: ups_power_loss_telegram
-  alias: UPS: пропало входное питание (Telegram)
+  alias: "UPS: пропало входное питание (Telegram)"
   description: Отправляет уведомление в Telegram, когда UPS переходит на батарею.
   mode: single
   triggers:
