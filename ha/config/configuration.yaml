@@ -13,17 +13,3 @@ recorder:
   db_url: mysql+pymysql://root:password@mariadb/homeassistant?charset=utf8mb4
   purge_keep_days: 30
   commit_interval: 1
-
-nut:
-  - name: Ippon UPS
-    host: nut
-    port: 3493
-    username: upsmon
-    password: upsmonpass
-    resources:
-      - battery.charge
-      - battery.runtime
-      - battery.voltage
-      - input.voltage
-      - output.voltage
-      - ups.status
