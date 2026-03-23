@@ -25,8 +25,9 @@
       for:
         seconds: 10
   actions:
-    - action: notify.telegram_ups
+    - action: telegram_bot.send_message
       data:
+        target: !secret telegram_chat_id
         message: >-
           ⚠️ Пропало входное питание 220V.
           UPS перешел на батарею ({{ states('sensor.ippon_ups_ups_status') }}).
