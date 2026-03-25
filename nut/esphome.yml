@@ -1,141 +1,96 @@
+substitutions:
+  device_name: ups-controller-c3
+  friendly_name: "UPS Controller"
+  # ВАЖНО: подставьте реальные GPIO, к которым подключены:
+  # 1) выход датчика наличия сети (через оптопару)
+  # 2) вход релейного модуля (который эмулирует нажатие кнопки UPS)
+  grid_gpio: GPIO20
+  relay_gpio: GPIO21
+
 esphome:
-  name: ups-monitor
-  friendly_name: UPS Monitor & Control
-  platformio_options:
-    board_build.f_cpu: 160000000L
+  name: ${device_name}
+  friendly_name: ${friendly_name}
 
 esp32:
   board: esp32-c3-devkitm-1
+  variant: ESP32C3
   framework:
     type: esp-idf
+  # Для диагностики удобно включить логирование загрузки:
+  # early_boot_log: true
 
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  # Точка доступа (fallback), если не удалось подключиться к Wi‑Fi — подключаетесь к ней с телефона/ПК для настройки.
-  ap:
-    ssid: "UPS-Monitor Fallback"
-    password: !secret wifi_ap_password
+logger:
 
 api:
   encryption:
     key: !secret api_encryption_key
 
 ota:
-  - platform: esphome
-    password: "ota_password_123"
 
-logger:
-  level: INFO
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret wifi_ap_password
 
-# Время по SNTP (нужно для сенсора "Last Power Restore")
-time:
-  - platform: sntp
-    id: sntp_time
-    timezone: Europe/Moscow
+captive_portal:
 
-# ============================================
-# ДАТЧИК НАЛИЧИЯ СЕТИ 220V
-# GPIO4 — свободный пин (GPIO8/9 на SuperMini заняты LED и Boot)
-# ============================================
+#
+# Сенсор сети 220В (оптопара 1-Channel Module Optocoupler 220V)
+#
 binary_sensor:
   - platform: gpio
-    pin: GPIO4
-    name: "Power Grid 220V"
-    id: grid_power
+    name: "UPS Сеть 220В"
+    id: ups_grid_present
     device_class: power
-    icon: mdi:transmission-tower
+    pin:
+      number: ${grid_gpio}
+      mode:
+        input: true
+        pullup: true
+      # Типовая логика у таких модулей часто: при наличии 220В вход тянется в LOW (через транзистор),
+      # поэтому для "ON при наличии сети" обычно нужен inverted: true.
+      # Если у вас наоборот (выход HIGH при наличии сети) — поменяйте на inverted: false.
+      inverted: true
     filters:
-      - delayed_on: 100ms
-      - delayed_off: 100ms
-    on_press:
-      then:
-        - logger.log: "✅ Сеть 220V ПОЯВИЛАСЬ"
-        - script.execute: handle_power_restored
-    on_release:
-      then:
-        - logger.log: "❌ Сеть 220V ПРОПАЛА"
-        - script.execute: handle_power_loss
+      - delayed_on: 300ms
+      - delayed_off: 300ms
 
-# ============================================
-# РЕЛЕ УПРАВЛЕНИЯ ИБП (эмуляция кнопки)
-# GPIO5 — свободный пин (GPIO8/9 на SuperMini заняты LED и Boot)
-# ============================================
+#
+# Реле, которое "нажимает" кнопку UPS.
+# Мы делаем только пульс на 3 секунды через script, а сам GPIO держим internal.
+#
 switch:
   - platform: gpio
-    pin: GPIO5
-    name: "UPS Power Button"
-    id: ups_relay
-    icon: mdi:power
-    restore_mode: ALWAYS_OFF  # При перезагрузке реле выключено
-    interlock: []  # Можно добавить другие реле для взаимной блокировки
+    name: "UPS Кнопка (реле)"
+    id: ups_button_relay
+    internal: true
+    pin:
+      number: ${relay_gpio}
+      mode:
+        output: true
+      # Реле замыкается по HIGH на GPIO => pin должен быть активным по HIGH.
+      inverted: false
+    restore_mode: ALWAYS_OFF
 
-# ============================================
-# СЦЕНАРИИ (SCRIPTS)
-# ============================================
 script:
-  # Обработка потери сети
-  - id: handle_power_loss
+  - id: ups_power_press_pulse
+    mode: restart
     then:
-      - delay: 2s  # Ждем 2 секунды (вдруг кратковременный скачок)
-      - if:
-          condition:
-            binary_sensor.is_off: grid_power
-          then:
-            - logger.log: "🔋 Сеть пропала надолго, включаем ИБП..."
-            - script.execute: press_ups_button
+      - switch.turn_on: ups_button_relay
+      - delay: 3s
+      - switch.turn_off: ups_button_relay
 
-  # Обработка восстановления сети
-  - id: handle_power_restored
-    then:
-      - logger.log: "🔌 Сеть восстановилась"
-      - sensor.template.publish:
-          id: last_power_restore
-          state: !lambda 'return id(sntp_time).now().timestamp;'
-
-  # Эмуляция нажатия кнопки ИБП (3 секунды)
-  - id: press_ups_button
-    then:
-      - logger.log: "🔘 НАЖИМАЕМ кнопку ИБП на 3 секунды..."
-      - switch.turn_on: ups_relay
-      - delay: 3s  # Держим кнопку нажатой 3 секунды
-      - switch.turn_off: ups_relay
-      - logger.log: "✅ Кнопка ИБП отпущена"
-
-# ============================================
-# ДОПОЛНИТЕЛЬНЫЕ СЕНСОРЫ
-# ============================================
-sensor:
-  - platform: uptime
-    name: "UPS Monitor Uptime"
-    update_interval: 60s
-
-  - platform: template
-    name: "Last Power Restore"
-    id: last_power_restore
-    device_class: timestamp
-    accuracy_decimals: 0
-
-# Текстовый статус
-text_sensor:
-  - platform: template
-    name: "UPS Status"
-    id: ups_status_text
-    lambda: |-
-      if (id(grid_power).state) {
-        return {" Сеть есть"};
-      } else {
-        return {"🔋 Работает от ИБП"};
-      }
-    update_interval: 5s
-
-# Кнопки управления
+#
+# Кнопка в Home Assistant:
+# одним нажатием (в HA) эмулируем удержание нажатия на UPS-кнопке 3 секунды.
+# Это "одна кнопка" ВКЛ/ВЫКЛ — UPS сам разберётся по своему состоянию.
+#
 button:
-  - platform: restart
-    name: "Restart UPS Monitor"
-
   - platform: template
-    name: "Manual UPS Power On"
+    name: "UPS ВКЛ/ВЫКЛ"
+    icon: "mdi:power"
     on_press:
-      then:
-        - script.execute: press_ups_button
+      - script.execute: ups_power_press_pulse
+

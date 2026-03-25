@@ -72,7 +72,7 @@ services:
       - ./config/secrets.yaml:/config/secrets.yaml:ro
       - /etc/localtime:/etc/localtime:ro
       # Раскомментируйте для прошивки по USB (подставьте свой устройство, например /dev/ttyUSB0):
-      # - /run/udev:/run/udev:ro
+      - /run/udev:/run/udev:ro
     # devices:
     #   - /dev/ttyUSB0:/dev/ttyUSB0
     environment:
