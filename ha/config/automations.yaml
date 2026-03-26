@@ -100,7 +100,7 @@
 
 - id: tuya_fridge_plug_unavailable_telegram
   alias: "Tuya: t34_smart_plug_switch_1 недоступен (Telegram)"
-  description: Проверяет каждые 10 минут и уведомляет, если switch.t34_smart_plug_switch_1 недоступен.
+  description: Проверяет каждые 10 минут и уведомляет, если Холодильник (switch.t34_smart_plug_switch_1) недоступен.
   mode: single
   triggers:
     - trigger: time_pattern
@@ -115,5 +115,5 @@
         chat_id:
           - !secret telegram_chat_id
         message: >-
-          ⚠️ Tuya недоступна: switch.t34_smart_plug_switch_1 в состоянии unavailable
+          ⚠️ Tuya недоступна: Холодильник (switch.t34_smart_plug_switch_1) в состоянии unavailable
           (проверка каждые 10 минут, {{ now().strftime('%d.%m.%Y %H:%M') }}).
