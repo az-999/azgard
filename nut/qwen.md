@@ -8,3 +8,4 @@ esphome
 https://chat.qwen.ai/s/81086143-eb69-4dba-bc57-67efb0233cd6?fev=0.2.7
 
 https://www.youtube.com/watch?v=J21dTvSBG5s
+https://www.youtube.com/watch?v=IzLD6f8cDHs
