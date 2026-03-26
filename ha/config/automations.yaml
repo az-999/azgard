@@ -25,7 +25,7 @@
       for:
         seconds: 10
   actions:
-    - action: send_message
+    - action: telegram_bot.send_message
       data:
         chat_id:
           - !secret telegram_chat_id
@@ -47,7 +47,7 @@
       for:
         seconds: 10
   actions:
-    - action: send_message
+    - action: telegram_bot.send_message
       data:
         chat_id:
           - !secret telegram_chat_id
@@ -68,7 +68,7 @@
       for:
         minutes: 1
   actions:
-    - action: send_message
+    - action: telegram_bot.send_message
       data:
         chat_id:
           - !secret telegram_chat_id
