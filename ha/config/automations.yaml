@@ -1,3 +1,4 @@
+
 - id: fridge_cycle_on
   alias: Включить розетку на 1 час (цикл 4ч)
   triggers:
@@ -76,3 +77,43 @@
           🔋 Низкий заряд UPS: {{ states('sensor.ippon_battery_charge') }}%.
           Статус: {{ states('sensor.ippon_status_data') }}.
           Вход: {{ states('sensor.ippon_input_voltage') }} V.
+
+- id: tuya_domik_unavailable_telegram
+  alias: "Tuya: domik_switch недоступен (Telegram)"
+  description: Проверяет каждые 10 минут и уведомляет, если switch.domik_switch недоступен.
+  mode: single
+  triggers:
+    - trigger: time_pattern
+      minutes: "/10"
+  conditions:
+    - condition: state
+      entity_id: switch.domik_switch
+      state: unavailable
+  actions:
+    - action: telegram_bot.send_message
+      data:
+        chat_id:
+          - !secret telegram_chat_id
+        message: >-
+          ⚠️ Tuya недоступна: switch.domik_switch в состоянии unavailable
+          (проверка каждые 10 минут, {{ now().strftime('%d.%m.%Y %H:%M') }}).
+
+- id: tuya_fridge_plug_unavailable_telegram
+  alias: "Tuya: t34_smart_plug_switch_1 недоступен (Telegram)"
+  description: Проверяет каждые 10 минут и уведомляет, если switch.t34_smart_plug_switch_1 недоступен.
+  mode: single
+  triggers:
+    - trigger: time_pattern
+      minutes: "/10"
+  conditions:
+    - condition: state
+      entity_id: switch.t34_smart_plug_switch_1
+      state: unavailable
+  actions:
+    - action: telegram_bot.send_message
+      data:
+        chat_id:
+          - !secret telegram_chat_id
+        message: >-
+          ⚠️ Tuya недоступна: switch.t34_smart_plug_switch_1 в состоянии unavailable
+          (проверка каждые 10 минут, {{ now().strftime('%d.%m.%Y %H:%M') }}).
