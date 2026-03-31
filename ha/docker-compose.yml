@@ -101,6 +101,21 @@ services:
     networks:
       - ha_network
 
+  # Обновляет A-запись DuckDNS при смене внешнего IP. Секреты — в `.env` рядом с compose.
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - LOG_FILE=false
+    networks:
+      - ha_network
+
 networks:
   ha_network:
     driver: bridge

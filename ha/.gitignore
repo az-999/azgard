@@ -9,6 +9,7 @@ config/secrets.yaml
 *.crt
 .password
 .token
+.env
 credentials.json
 service_account.json
 

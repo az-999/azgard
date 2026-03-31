@@ -1,4 +1,6 @@
 Home Assistant установлен на Raspberry Pi 5 4Gb на Raspberry Pi OS Desktop.
+Home Assistant открывается по IP 192.168.1.75. Порт 80
+
 
 ## Bluetooth
 
