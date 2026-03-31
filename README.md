@@ -48,3 +48,10 @@ https://www.youtube.com/watch?v=FT1EKE4JeRQ
 
 Рампа для газовых баллонов частного дома. Увеличиваем количество баллонов газового котла
 https://www.youtube.com/watch?v=9Y3lI8RSbR4
+
+# TG proxy
+
+docker run -d --name=mtproto-proxy3 -p 1083:443  -e SECRET=a1b2c3d4e5f678901234567890abcdef  telegrammessenger/proxy
+
+https://t.me/proxy?server=185.55.241.245&port=1083&secret=a1b2c3d4e5f678901234567890abcdef
+https://t.me/proxy?server=185.55.243.152&port=1083&secret=a1b2c3d4e5f678901234567890abcdef
