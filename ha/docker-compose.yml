@@ -107,7 +107,7 @@ services:
     container_name: cloudflared
     restart: unless-stopped
     network_mode: host
-    command: tunnel --no-autoupdate --protocol http2 run --token ${CF_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 run --token ${CF_TUNNEL_TOKEN}
     environment:
       - TZ=Europe/Moscow
 
