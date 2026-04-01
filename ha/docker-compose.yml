@@ -101,16 +101,6 @@ services:
     networks:
       - ha_network
 
-  # Cloudflare Tunnel для внешнего доступа к HA при CGNAT.
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
-    restart: unless-stopped
-    network_mode: host
-    command: tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 --region us run --token ${CF_TUNNEL_TOKEN}
-    environment:
-      - TZ=Europe/Moscow
-
 networks:
   ha_network:
     driver: bridge
