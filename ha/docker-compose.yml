@@ -106,11 +106,10 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
+    network_mode: host
     command: tunnel --no-autoupdate --protocol http2 run --token ${CF_TUNNEL_TOKEN}
     environment:
       - TZ=Europe/Moscow
-    networks:
-      - ha_network
 
 networks:
   ha_network:
