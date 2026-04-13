@@ -1,141 +1,39 @@
 https://chat.qwen.ai/c/325964c7-feba-4b59-84fa-3beb22ba61dc
 
+домен: x.vedicai.ru
+ip: 185.55.241.245
 
-Понял вас. Вы хотите именно транспорт **`xhttp`** (Split HTTP) в связке с **VLESS**, и всё это должно работать внутри **Docker**-контейнеров, без установки пакетов нативно в систему.
+http://185.55.241.245:54321
+http://185.55.241.245:2053
 
-Это передовая конфигурация. Транспорт `xhttp` появился в свежих версиях ядра **Xray-core** (начиная примерно с 1.8.18+). Чтобы это работало стабильно, нам нужно:
-1.  Свежее ядро Xray.
-2.  Панель управления, которая умеет генерировать конфиги с `type=xhttp`.
-3.  **Важно:** Для транспорта `xhttp` настоятельно рекомендуется наличие **домена** и действительного **TLS-сертификата**, так как этот транспорт маскируется под обычный HTTPS трафик. Если домена нет, лучше использовать **Reality** (она тоже VLESS, но без домена).
 
-Я предложу решение на базе панели **3X-UI (форк MHSanaei)**, запущенной через **Docker Compose**. Это максимально изолированное решение: вся конфигурация, база данных и ядро живут внутри контейнера.
+`ssh -L 2053:127.0.0.1:2053 root@185.55.241.245`
 
-### Шаг 1: Подготовка Docker и файлов
+# Закрываем порты
 
-Убедитесь, что у вас установлен Docker и Docker Compose.
-```bash
-apt update && apt install -y docker.io docker-compose-plugin
-```
-
-Создайте директорию для проекта:
-```bash
-mkdir -p /opt/xray-docker
-cd /opt/xray-docker
-```
-
-### Шаг 2: Создаем docker-compose.yml
-
-Создайте файл `docker-compose.yml`. Мы используем сеть `host`, чтобы не пробрасывать каждый порт вручную и сохранить реальные IP клиентов (это важно для логики работы прокси).
-
-```yaml
-version: "3"
-services:
-  3x-ui:
-    image: ghcr.io/mhsanaei/3x-ui:latest
-    container_name: 3x-ui
-    network_mode: "host"
-    restart: unless-stopped
-    environment:
-      - XRAY_VMESS_AEAD_FORCED=false
-    volumes:
-      - ./db:/etc/x-ui
-      - ./cert:/etc/cert
-      - ./logs:/var/log
-    security_opt:
-      - no-new-privileges:true
-```
-
-*Примечание:* Папка `./cert` понадобится, если вы будете использовать TLS (для xhttp это обязательно).
-
-### Шаг 3: Запуск контейнера
-
-Запустите сервис:
-```bash
-docker compose up -d
-```
-
-После запуска панель будет доступна по адресу: `http://<IP-вашего-сервера>:54321` (порт по умолчанию, может измениться при первом запуске в логах).
-
-**Чтобы узнать логин и пароль:**
-```bash
-docker exec -it 3x-ui x-ui settings
-```
-Или измените их через команду внутри контейнера:
-```bash
-docker exec -it 3x-ui x-ui user
-```
-
-### Шаг 4: Настройка VLESS + XHTTP в панели
-
-1.  Зайдите в веб-интерфейс панели.
-2.  Перейдите в **Inbounds** -> **Add Inbound**.
-3.  Заполните поля следующим образом:
-
-    *   **Protocol**: `vless`
-    *   **Port**: Например, `443` (если есть домен) или любой другой, например `2053`.
-    *   **Security**: `tls` (Для xhttp критически важно шифрование, иначе блокировки).
-    *   **Certificate**:
-        *   Если у вас есть домен, нажмите кнопку получения сертификата (Acme) внутри панели или загрузите файлы `fullchain.pem` и `privkey.pem` в папку `./cert` на сервере и укажите пути.
-        *   *Без домена xhttp работать корректно не будет.* Если домена нет — см. альтернативу ниже (Reality).
-    *   **Transport**: Выберите `xhttp` (если этого пункта нет в списке, значит версия ядра в контейнере еще не подтянула поддержку UI, обновите образ `docker compose pull && docker compose up -d`).
-    *   **Host**: Ваш домен (обязательно должен совпадать с сертификатом).
-    *   **Path**: Например, `/ray` (любое значение).
-    *   **UUID**: Сгенерируйте новый.
-    *   **Flow**: Оставьте пустым (для xhttp обычно не требуется vision).
-
-4.  Нажмите **OK**.
-
-### Шаг 5: Настройка брандмауэра (UFW)
-
-Даже внутри Docker, хост-система должна пропускать трафик.
-```bash
-apt install ufw -y
-ufw allow 22/tcp        # SSH
-ufw allow 54321/tcp     # Порт панели
-ufw allow 443/tcp       # Порт прокси (если используете 443)
-ufw allow 2053/tcp      # Порт прокси (если используете свой)
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp comment 'SSH'
+ufw allow 443/tcp comment 'VPN Xray'
+# 2053 НЕ добавляем — панель снаружи не пускаем
 ufw enable
-```
+ufw status verbose
 
-### Шаг 6: Получение ссылки
+ufw allow 2053/tcp
+ufw deny 2053/tcp
 
-В списке Inbounds нажмите на значок **QR Code** или **Copy Link**.
-В ссылке должно быть указано `type=xhttp`.
-Пример:
-`vless://uuid@domain:443?encryption=none&security=tls&type=xhttp&host=domain.com&path=/ray#MyProxy`
 
-Импортируйте эту ссылку в клиент (v2rayNG, Hiddify, NekoBox и т.д.).
+# tls
+vless://7d2cd18d-3078-4e67-8af9-617c1411c404@185.55.241.245:443?type=tcp&encryption=none&security=reality&pbk=hlFXYlRX2LecbXY-U9DIovHqOZXsHYerSp6jyRqTrHQ&fp=chrome&sni=www.yandex.ru&sid=8aea6b15&spx=%2F#b3-gs3am0r9
+vless://6d0b31af-cc90-444b-b17b-82eb22699fcd@31.129.22.245:24247?type=tcp&encryption=none&security=reality&pbk=bKCbi9aj8vzLd4068BRMBioyy-CCcou_5Rx_a5gNBzU&fp=chrome&sni=yandex.ru&sid=37e21259cc43c333&spx=%2F#%F0%9F%92%9A%20EVA%20VPN%20%5BPRT%5D
 
----
 
-### ⚠️ Важная альтернатива: Если нет домена (VLESS + Reality)
+# xhttp
+vless://4b82885b-9883-49af-b1f1-81f8b0d34980@185.55.241.245:443?type=xhttp&encryption=none&path=%2F&host=&mode=auto&security=reality&pbk=nGutElaIK8_udwjXP-izLFjBy3zYsMgkiROT0NjZN3A&fp=chrome&sni=www.nvidia.com&sid=cc68ebd8f1713fb5&spx=%2F&pqv=bMyWcsdpUc2Ow3JYV6bN2v_98PXNA4a0veVHYFBn5j_KTC76OVctYXdpDmu2rnxB5vV6Dc2zThdZaLXyT43RSzb19C9bcQtWlGJQZ_JDZrRRdjJwxw2kj3IdZdPy4U56DovsJC0phBy2s9L78v8UoLY7uQDGW1Y44lrvP2nbmLXTsdTr9DEOFH-ZcSR2m1RnGTs-qfQFNez-x23rx52MevVKXC7YRN3A4nI0BtlY0NKjZiO8jqg-FmOv1BODAiLrbT1Yx6V80ngIKwUoz1AHH25uasTG5_W4UbGK0C6P_R5GoxeRuxWZZ69Fauz41zZqulRp_jnaeCRViCy9lWke7cyPimooZUUpUEvlmsus05hR6FPoZDooKcTiSLKGRromJQb3qyKMGddMwNhVGHFsN5ltGJiUnaqv--1YfhvKuvcjjJjfrKr90gBBYzkr_EMxdmgc5MtwmCdNhKL3AOV9vHiHDjdFiQv12CIJ3PYs3pNEy8Cnapmh2vyfXG_M6BYrcd73Ktk1ptiV6r0OAvtNfSXQc6_FBMyxxn-8bl0aB7rhvA7yRZbCHF8J6cL-uWLyjWvwxoPnLxd6oFmCyTa30H1SVIoTvRSpLW8rAqOHQ-7AyrBOWQon3nJDSM28otsB9piLW9_oxK7UIjzgZUsyopdlnMsbuHTfB4f_k_tnBI1kKwzB6dovPRHP4_J4QTmS5wr-JM71-YsPOFL8IEWm05rVJf063Js0iIFkq99bNkkOny5TSPlztOhmqopApXioWC1US1h7rDZc0qFUwXPeIenE9UaMdfIiUuaItXH8CEHqwk3NCMD3zRxpTyIyNjLUmyNbiLkw4XVIgLJqBZrioQ_F03KWQM7BNTVRAGGMGo-ye079Ty9D9u2iqwsYpV6vg6WHYf7u3A6Fyt6eHqypShIdWScOYsapTA7jpJxv9WPL_vy-dkVCOKo38I8IH-Wv3sVt-C2cgBRDfDVUDZZ8jibmqzd5M2LTPj-pJDRfOLur5yz0tH0zgOZiOFqES9FAqZogR6jN9vdQP7BZjo_Zk_5CzThZIo7DBpZl6pXZexx6BzOpDb1KFLY3ZdHnymaLwFRcKUJqmpjy5T0NX4OexSgF32sOE1rzdx34AmAq63ylcC9ZATciSX8YVwe_lrvxf_7S6GppsLbFEheKJH8FhYH57ejszxA8f__xGu8tOy7SO-hZ-YeLItNdmqza4iLXjEo1peXXjr7W7dGfXT7k1HdtkAskZTeRXHsJ12n5Yo4UqwSK6dNM7XJwfiSwKOiF3UubOmCTBm53ktC5_DvgD9SFW3PhtpyPTVl0F_7pKThICi1fkQTbzYd7qur6J4TZiz5FePtLvJbseCeqtGigO9pA3PDhx1EXjx5bJXAnVBNzMCcaF90OqrMMysDnjEczqfnXbOrj8RlUSfl7mao5gf4mFHgw5rRQKNXxglk-vleDWznEidiIS0ttGh8T04FraDLshs_J8N2xy1TVuZzgyIlLnSJgsDf3letWdqdu9SdvIelA7Hf17C4vxE5C2VLuy3LmUHXkBlINNS30vJ6wHoq92aeuPbMgtVy5HVs5MWKvbnVwJAdNanUyl7602eakpmml1-3pgh6pAo1LuE-9sJIzF1FPCeWxDyozT2cyt_ZTjffBQ2IysPMwgH7GtgnAAqh2ctCeODdzQa8J3zORwNlxZ8ra1y-SSLSgh1OGo4CIz7Iu_vymZeNFNyheJu4U5cpZUN8I5MwZNEaxsmGo5HjRdWF-uJnnZ4pSvt-Tx57cTpJsRwYFESl2JCrCUiw4f3-uZ7NaXCl8RGdzJbVLGUS33ZOzEgW-OjsG4qaT2qJEkq8MITMk63j41DYaE19G50eD7Dyk4qcT6_tz_8r9cwB0DXhUsJZCOvmG95lLVaM7SpQ1bmBsxoa6ywbb8LnDDrYQRxQuxAbB3D96n13TnddhgfiNli-iQz-UMmE3uSjg1T6SVo-FM-t4XJSRC9CTK09dmlLVGBJA1BcD0KRQERyVWJ9xtEt-69SaL2aogXSW8XIEHFA3Uaj1BCbK247sv_sq1Jbw3pC81nzqw5ZNWdqMM_UaKhsZCmktGvWPv7Yc921M3-IWE0hqOlAHu1lC5RBokm44W3lzgOJWgYZTTU_2bjtXcS9A2ktUYTkWAIV38jRi-6oUugggRpuqlnE1Uo8SLZYiyLz_ENJrEzfIkEAV6tXSexzitJd7d8qNmNfr4rksd5pMhrBB-SCSVBUJxnrtZETu3mDGM6C4k9587dIpvyRaDbf10ef4dAvrqxg2rNCmLTPPrjdCdie8A8skQ6kK5aBsisz-pwvnGxhxVViLiFncNlqfV-cbkkPtpYImR7TE5al0zf0ArOHxg5Xect4hwtqVIBNh9vVmHsOHFoqtAtshQqwcypxHp8N9oWat293e3-5mhqMBXf3PBcPz6iMVzoM3Mbo88ON9DslaHlKWOdujC5FYdja55Df5mcew0GEDsG-eJuB_tFNQkH1Fdc1aW8DzsZBvmk5FAgUt5VcWLLeTCff4S7u3GE75e9H6NYjEPKK7vWuqnBoNs60e0NqmpEFpey9jpKmpVyceegeOV0nMDOjWjdI7oQGA5yI#b4-768b9enk
+vless://4b82885b-9883-49af-b1f1-81f8b0d34980@185.55.241.245:443?type=xhttp&encryption=none&path=%2F&host=&mode=auto&security=reality&pbk=nGutElaIK8_udwjXP-izLFjBy3zYsMgkiROT0NjZN3A&fp=chrome&sni=www.yandex.ru&sid=cc68ebd8f1713fb5&spx=%2F&pqv=bMyWcsdpUc2Ow3JYV6bN2v_98PXNA4a0veVHYFBn5j_KTC76OVctYXdpDmu2rnxB5vV6Dc2zThdZaLXyT43RSzb19C9bcQtWlGJQZ_JDZrRRdjJwxw2kj3IdZdPy4U56DovsJC0phBy2s9L78v8UoLY7uQDGW1Y44lrvP2nbmLXTsdTr9DEOFH-ZcSR2m1RnGTs-qfQFNez-x23rx52MevVKXC7YRN3A4nI0BtlY0NKjZiO8jqg-FmOv1BODAiLrbT1Yx6V80ngIKwUoz1AHH25uasTG5_W4UbGK0C6P_R5GoxeRuxWZZ69Fauz41zZqulRp_jnaeCRViCy9lWke7cyPimooZUUpUEvlmsus05hR6FPoZDooKcTiSLKGRromJQb3qyKMGddMwNhVGHFsN5ltGJiUnaqv--1YfhvKuvcjjJjfrKr90gBBYzkr_EMxdmgc5MtwmCdNhKL3AOV9vHiHDjdFiQv12CIJ3PYs3pNEy8Cnapmh2vyfXG_M6BYrcd73Ktk1ptiV6r0OAvtNfSXQc6_FBMyxxn-8bl0aB7rhvA7yRZbCHF8J6cL-uWLyjWvwxoPnLxd6oFmCyTa30H1SVIoTvRSpLW8rAqOHQ-7AyrBOWQon3nJDSM28otsB9piLW9_oxK7UIjzgZUsyopdlnMsbuHTfB4f_k_tnBI1kKwzB6dovPRHP4_J4QTmS5wr-JM71-YsPOFL8IEWm05rVJf063Js0iIFkq99bNkkOny5TSPlztOhmqopApXioWC1US1h7rDZc0qFUwXPeIenE9UaMdfIiUuaItXH8CEHqwk3NCMD3zRxpTyIyNjLUmyNbiLkw4XVIgLJqBZrioQ_F03KWQM7BNTVRAGGMGo-ye079Ty9D9u2iqwsYpV6vg6WHYf7u3A6Fyt6eHqypShIdWScOYsapTA7jpJxv9WPL_vy-dkVCOKo38I8IH-Wv3sVt-C2cgBRDfDVUDZZ8jibmqzd5M2LTPj-pJDRfOLur5yz0tH0zgOZiOFqES9FAqZogR6jN9vdQP7BZjo_Zk_5CzThZIo7DBpZl6pXZexx6BzOpDb1KFLY3ZdHnymaLwFRcKUJqmpjy5T0NX4OexSgF32sOE1rzdx34AmAq63ylcC9ZATciSX8YVwe_lrvxf_7S6GppsLbFEheKJH8FhYH57ejszxA8f__xGu8tOy7SO-hZ-YeLItNdmqza4iLXjEo1peXXjr7W7dGfXT7k1HdtkAskZTeRXHsJ12n5Yo4UqwSK6dNM7XJwfiSwKOiF3UubOmCTBm53ktC5_DvgD9SFW3PhtpyPTVl0F_7pKThICi1fkQTbzYd7qur6J4TZiz5FePtLvJbseCeqtGigO9pA3PDhx1EXjx5bJXAnVBNzMCcaF90OqrMMysDnjEczqfnXbOrj8RlUSfl7mao5gf4mFHgw5rRQKNXxglk-vleDWznEidiIS0ttGh8T04FraDLshs_J8N2xy1TVuZzgyIlLnSJgsDf3letWdqdu9SdvIelA7Hf17C4vxE5C2VLuy3LmUHXkBlINNS30vJ6wHoq92aeuPbMgtVy5HVs5MWKvbnVwJAdNanUyl7602eakpmml1-3pgh6pAo1LuE-9sJIzF1FPCeWxDyozT2cyt_ZTjffBQ2IysPMwgH7GtgnAAqh2ctCeODdzQa8J3zORwNlxZ8ra1y-SSLSgh1OGo4CIz7Iu_vymZeNFNyheJu4U5cpZUN8I5MwZNEaxsmGo5HjRdWF-uJnnZ4pSvt-Tx57cTpJsRwYFESl2JCrCUiw4f3-uZ7NaXCl8RGdzJbVLGUS33ZOzEgW-OjsG4qaT2qJEkq8MITMk63j41DYaE19G50eD7Dyk4qcT6_tz_8r9cwB0DXhUsJZCOvmG95lLVaM7SpQ1bmBsxoa6ywbb8LnDDrYQRxQuxAbB3D96n13TnddhgfiNli-iQz-UMmE3uSjg1T6SVo-FM-t4XJSRC9CTK09dmlLVGBJA1BcD0KRQERyVWJ9xtEt-69SaL2aogXSW8XIEHFA3Uaj1BCbK247sv_sq1Jbw3pC81nzqw5ZNWdqMM_UaKhsZCmktGvWPv7Yc921M3-IWE0hqOlAHu1lC5RBokm44W3lzgOJWgYZTTU_2bjtXcS9A2ktUYTkWAIV38jRi-6oUugggRpuqlnE1Uo8SLZYiyLz_ENJrEzfIkEAV6tXSexzitJd7d8qNmNfr4rksd5pMhrBB-SCSVBUJxnrtZETu3mDGM6C4k9587dIpvyRaDbf10ef4dAvrqxg2rNCmLTPPrjdCdie8A8skQ6kK5aBsisz-pwvnGxhxVViLiFncNlqfV-cbkkPtpYImR7TE5al0zf0ArOHxg5Xect4hwtqVIBNh9vVmHsOHFoqtAtshQqwcypxHp8N9oWat293e3-5mhqMBXf3PBcPz6iMVzoM3Mbo88ON9DslaHlKWOdujC5FYdja55Df5mcew0GEDsG-eJuB_tFNQkH1Fdc1aW8DzsZBvmk5FAgUt5VcWLLeTCff4S7u3GE75e9H6NYjEPKK7vWuqnBoNs60e0NqmpEFpey9jpKmpVyceegeOV0nMDOjWjdI7oQGA5yI#b4-768b9enk
 
-Транспорт `xhttp` требует домен и TLS. Если вы не хотите покупать домен или возиться с сертификатами, **настоятельно рекомендую использовать VLESS + Reality**. Это тоже работает внутри этого же Docker-контейнера, не требует домена и обходит блокировки даже лучше.
+vless://34c92fad-2588-45b7-b9ef-e43e5325acc9@185.55.241.245:443?type=xhttp&encryption=none&path=%2F&host=&mode=auto&security=reality&pbk=vrDuaKtiDlEZ-QdOrleZ0zaqXBzvZuQ3EgDMJwEXNEg&fp=chrome&sni=yandex.ru&sid=7d368343&spx=%2F&pqv=z1fttS1ZB5f8KxUqsZbOekKS3IEPap5RlZVzKhNms_QFC4lNQjcnSg-8zN_nanQgEfazt5JqZNLCkkZUU4b6W_5u1ssKiPxk6-qldBhiN8yOlNupDHSo6A_45Mzl86NzquxsPWJFmpBA6-YgpaTtTGdjKq4-cqwYgg_O_UtXULlkTSLlR3cH0Tsq2hSBUf9xhZYDgIgu2v-wKv4R-CCJp9GIJw9sEWmUMlBoyUt_x8r8BolRKHZrsiiFmzKB_-OSWaeoY8tW41Q7-Eey9gYz5L94Ex1C_SnU82Par0T4C7OHSLgaH8NrFduMNU_2EzQ8CKak9_oJfUIvuGYfiRrtpGFnq6uTZsgOd66ZPeVpPLLrAjpUh6V_EY3KtOs8yInkfPg52GbRIHnsrAZMclrytoupqGZRI-qaOT0zh_UvMY4qzaTW08XcV4v4AkvJCwpqtgZArg9qsERAzYRD1KIZCAcX9qmicfwQLhNuCHEjvKLDeRPcC1VcdPfdsTyg64PyFs2nVUQENjhWKXnAJFr1UoUMMi8NXWvUlXaBdwVV3gKhzIDdGAM_m9w3Meri-26GBSGOOak7D87RxZ2uZnTWgO0lFl6PkmfH2fgCwkiAYqagliMcXDEYZonWO0RabY3blWvIKqS4Sb3KatgD3PYdfaaT51Y5-4oNaB8_57Y-p3dSOj7Ob8t4kc7u8BdHfJY6wG2uO3jYASKRx_0gS_dGPNmttz2y_NFLjeuZlOay2j01gDDVgR5E2C1rdWORoUPiV8Bpx-059LvBrGxrQfoXMop7qJ4ng4SBYQgxq3bzB0UhafgJv_smw0yLmdYUtXcq9f3u0SIMiU5RMETsCB7TDPU7N6itwCxBiNlwiOoli-TrTOTYSEUC1Qxtr-LiO10kU6qfrP9FUNSKb0tyDmnGgubmevVY7F-4agm6oW0oP8I-J0cB3tAtvur-UTMPICa2vOgJhgENsArpqMYzjRhzNY1MJIGG2JGXuG05XL5kZz-G3p_RwxRBKLEFW_t8XsuVG4ofg3Ph1LPboOMUzGhl6Lo6QOKGc1MmSDG9UwLK9pUMkm8W6SIDkqTWyzo2akndZ1qBKkF9FeUuQAeYl83HyvSqWf7Z7DUAyPgC3CPetnoHLk5EZc9iEPjMQLvPZJwNp8nCMcj8DKjmHf5LXLdLoNcU0zwucGd3Rxeg-YWWYawvZqsxQk1ucwQeshRsiNjyseD51vD6DfkLtpSyVYuV2hx3frI26CIV9VU1zIutdOoyQac9zvPLq2qfylYa9FapCGmN8jEKPKCuH9bBRD9WUeLZ8xv_8mFan3qEFnhNqNk2gfvN9DoXH5ej25lU27L6zDz3a5l0iDWYGnCF5_IngC32Z29EY85lJCc1xmlwUh9_Nr3lqnAtwLjwCJ3c4B7FJNunNHTPSKjWfGKJLDO-dHi_ZfbjqG1WYdvDjxvNLrocEU-KVZBih4PK12NmtpGuN-MEWMVb57UUMK258BsElofGEvN2wFJWGtq9jWBRx1dPpPMR8j7ldIqBrM3MLC9fR3lMXVDS_iIX0E09qVi8bjsLmWdnXztZyyfgA6TStvREKUK2Gdwer_ZSHOztR5w-ZHF6XiW0Q_UGnQ1HfLCWCHFZq1K0ld7-jvkY8kFpqVXCRNQ1kGNHN__le_Qcuc2sl4z7iYlaYZ2UsufUENwjlQwcMtcVpiqnDLKJX-cwE6GQ9jaZ7s63qqKgA0UOlcHZ4zqLeOlJpgDWWM1hZpbfWr7S82a5QqSmYvUzBR_k7Is8ykL7n1YfTDmj6bcLHn92yyxPr-d5Zjr355pAVnrxOrVwOgZ4Lmk9hsDGopQ0NuMIW6n9TMkbG8PkZYxi5yS5UuiU6xtsrXzuNrXnxy0YyiF-7aaqqsrfIt2GS_UJVnXKCQUOvA6vvkH6_-cBTGtWC2XRxW0r65DRdNZYjJmc5Z7YhzeRByN7Y3IDQTgAq5j8WIfZElS226Jmqm632bx8DImuXGw5N8_ri_aWvhZQxoXtuYh4_5qeqYqh9IG4sSkdrofBtMuUSWsL5VyhxA37AAOR1ZdFH5WHSkoae2SKG4zjRmF9JPzWtc4-t1KmqCliYDn8SpWxY9DscUMBbofNzA0rjCsxLJ6_rbM-tw53Qbc37imw5bSNkCRR6I5mEdAeocJTYLejTUedGKofFOyrBZePyT2Y-BIl9BcQY11oyrDex3Prk_6H9EEpvj9-njzZJoy3qPsuk3VawSPTONhO7EJaUrygiTU2YVjlL3v5_ouHsDCKOjkNUIl18bgsJI4JHkZpD95d_9hba17A9OoOXjtxtex9EUFen1beJRBkfo6yI4C-g31ycBtZG0YBCvmzG7vRSjjPFFT1_DbyuQKFNQz4j_xz9myH4eJq8hPUb--Qos0vjUsG64NrxpBcDAzNeHBQ3rAqYdG4qjLbRCoTqIGFdCCTfHod8PZeZIxNBBNoJWJIub-vLwawRQaryPsdBVPb-xQTTcN7yfSxI_pLnb0SnR5Ne8I8UxTRWtHkLab8bU6cut-BL0SK0YAqmZuLX7RDtsJ52FMWcvNb-aMW5qNPONxc9B0prV0HsCraTnr7jeFYPBSQirWyHMR_Yig#b6-3mtp2q68
 
-**Как настроить Reality в этой же Docker-панели:**
-1.  **Add Inbound** -> **Protocol**: `vless`.
-2.  **Security**: Выберите `reality`.
-3.  **Dest**: Например, `www.google.com:443` (куда будет стучаться сервер, если не ваш трафик).
-4.  **Server Names**: Ваш домен (можно фейковый, например `www.google.com`) или оставьте IP.
-5.  **Private Key / Public Key**: Нажмите кнопку **Generate** в панели.
-6.  **Short ID**: Оставьте пустым или сгенерируйте.
-7.  **Transport**: Можно оставить `tcp` или выбрать `xhttp` (Reality работает поверх xhttp тоже, но чаще используют чистый TCP для Reality).
+# sing-box-extended Installer
 
-**Почему Reality лучше для старта:**
-*   Не нужен домен.
-*   Не нужны сертификаты.
-*   Максимальная маскировка.
-*   Работает в том же Docker-контейнере.
-
-### Управление контейнером
-
-*   **Перезапуск:** `docker compose restart`
-*   **Просмотр логов:** `docker compose logs -f`
-*   **Обновление:**
-    ```bash
-    docker compose pull
-    docker compose up -d
-    ```
-*   **Удаление:** `docker compose down` (данные сохранятся в папке `./db`, если не удалите её).
-
-Этот метод полностью изолирует прокси от вашей ОС. Если что-то сломается, вы просто удаляете контейнер, а конфиги остаются в папке `db`.
+https://github.com/EikeiDev/OpenWRT-sing-box-extended

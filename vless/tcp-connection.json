@@ -1,0 +1,37 @@
+{
+  "id": 3,
+  "userId": 0,
+  "up": 9297029,
+  "down": 134798866,
+  "total": 0,
+  "allTime": 144095895,
+  "remark": "b3",
+  "enable": true,
+  "expiryTime": 0,
+  "trafficReset": "never",
+  "lastTrafficResetTime": 0,
+  "listen": "",
+  "port": 443,
+  "protocol": "vless",
+  "settings": "{\n  \"clients\": [\n    {\n      \"comment\": \"\",\n      \"created_at\": 1775411055000,\n      \"email\": \"gs3am0r9\",\n      \"enable\": true,\n      \"expiryTime\": 0,\n      \"flow\": \"\",\n      \"id\": \"7d2cd18d-3078-4e67-8af9-617c1411c404\",\n      \"limitIp\": 0,\n      \"reset\": 0,\n      \"subId\": \"v0ezeitf0zb4uea6\",\n      \"tgId\": 0,\n      \"totalGB\": 0,\n      \"updated_at\": 1775413795000\n    }\n  ],\n  \"decryption\": \"none\",\n  \"encryption\": \"none\"\n}",
+  "streamSettings": "{\n  \"network\": \"tcp\",\n  \"security\": \"reality\",\n  \"externalProxy\": [],\n  \"realitySettings\": {\n    \"show\": false,\n    \"xver\": 0,\n    \"target\": \"www.yandex.ru:443\",\n    \"serverNames\": [\n      \"www.yandex.ru\"\n    ],\n    \"privateKey\": \"EMHcCiu0-5F6ZbZgJNlLMNjJDiUKhGTeCTF0poUD4HQ\",\n    \"minClientVer\": \"\",\n    \"maxClientVer\": \"\",\n    \"maxTimediff\": 0,\n    \"shortIds\": [\n      \"8aea6b15\",\n      \"5b\",\n      \"b46211d3b2\",\n      \"79293b5697ba\",\n      \"c54d2cba86545b\",\n      \"9e29\",\n      \"ed619e9ac12cdaf2\",\n      \"57d202\"\n    ],\n    \"mldsa65Seed\": \"\",\n    \"settings\": {\n      \"publicKey\": \"hlFXYlRX2LecbXY-U9DIovHqOZXsHYerSp6jyRqTrHQ\",\n      \"fingerprint\": \"chrome\",\n      \"serverName\": \"\",\n      \"spiderX\": \"/\",\n      \"mldsa65Verify\": \"\"\n    }\n  },\n  \"tcpSettings\": {\n    \"acceptProxyProtocol\": false,\n    \"header\": {\n      \"type\": \"none\"\n    }\n  }\n}",
+  "tag": "inbound-443",
+  "sniffing": "{\n  \"enabled\": false,\n  \"destOverride\": [\n    \"http\",\n    \"tls\",\n    \"quic\",\n    \"fakedns\"\n  ],\n  \"metadataOnly\": false,\n  \"routeOnly\": false\n}",
+  "clientStats": [
+    {
+      "id": 3,
+      "inboundId": 3,
+      "enable": true,
+      "email": "gs3am0r9",
+      "uuid": "7d2cd18d-3078-4e67-8af9-617c1411c404",
+      "subId": "v0ezeitf0zb4uea6",
+      "up": 8868813,
+      "down": 132222844,
+      "allTime": 141091657,
+      "expiryTime": 0,
+      "total": 0,
+      "reset": 0,
+      "lastOnline": 1775413976006
+    }
+  ]
+}
