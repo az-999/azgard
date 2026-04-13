@@ -14,3 +14,6 @@ npu/npu/
 # Python
 __pycache__/
 *.py[cod]
+
+# Matrix Synapse: локальный конфиг с секретами (генерируйте на сервере)
+matrix/homeserver.generated.yaml

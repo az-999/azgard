@@ -1,0 +1,43 @@
+# Скопируйте на сервер рядом с docker-compose или используйте как bind-mount (см. docker-compose.yml).
+# Домен: matrix.fairyland.world. БД: сервис db (PostgreSQL), пароль как в compose.
+
+server_name: "matrix.fairyland.world"
+pid_file: /data/homeserver.pid
+public_baseurl: "https://matrix.fairyland.world/"
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses:
+      - "0.0.0.0"
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  args:
+    user: synapse
+    password: passwd
+    database: synapse
+    host: db
+    cp_min: 5
+    cp_max: 40
+
+log_config: "/data/matrix.fairyland.world.log.config"
+media_store_path: /data/media_store
+uploads_path: /data/uploads
+
+registration_shared_secret: "658a73c04ffe3752b191e7cfb941dc175c9d95b8a66b4f211b5c047a144a882f"
+report_stats: false
+macaroon_secret_key: "fa3c5a8d1361a95a7dabc4cabc1a023145d0f8a95e0f9e1b07f6c1486e2eec3a"
+form_secret: "f49b46c4bb35666fb52b3c360fe0b4e6dc322d14c1f76e288d27fa93febb440c"
+signing_key_path: "/data/matrix.fairyland.world.signing.key"
+
+enable_registration: false
+suppress_key_server_warning: true
+
+trusted_key_servers:
+  - server_name: "matrix.org"
