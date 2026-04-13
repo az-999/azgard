@@ -1,5 +1,3 @@
-version: '3'
-
 services:
 
   synapse:
@@ -18,7 +16,7 @@ services:
       - synapse_network
 
   db:
-    image: docker.io/postgres:12-alpine
+    image: docker.io/postgres:16-alpine
     environment:
       - POSTGRES_USER=synapse
       - POSTGRES_PASSWORD=passwd
