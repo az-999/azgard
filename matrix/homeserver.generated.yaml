@@ -36,7 +36,14 @@ macaroon_secret_key: "fa3c5a8d1361a95a7dabc4cabc1a023145d0f8a95e0f9e1b07f6c1486e
 form_secret: "f49b46c4bb35666fb52b3c360fe0b4e6dc322d14c1f76e288d27fa93febb440c"
 signing_key_path: "/data/matrix.fairyland.world.signing.key"
 
-enable_registration: false
+# Регистрация по паролю. Element X / мобильный Element при «Создать аккаунт» часто
+# требуют Matrix Authentication Service (MAS) — отдельный сервис; без него в приложении
+# будет ошибка про MAS. Обход: регистрация через Element в браузере (app.element.io → свой сервер)
+# или учётки создаёте вы (Synapse-Admin / register_new_matrix_user). Полноценно как у matrix.org —
+# нужен свой MAS: https://github.com/element-hq/matrix-authentication-service
+enable_registration: true
+enable_registration_without_verification: true
+
 suppress_key_server_warning: true
 
 trusted_key_servers:
