@@ -55,11 +55,11 @@ docker compose up -d
 
 **Чтобы узнать логин и пароль:**
 ```bash
-docker exec -it 3x-ui x-ui settings
+docker exec -it 3xui_app x-ui settings
 ```
 Или измените их через команду внутри контейнера:
 ```bash
-docker exec -it 3x-ui x-ui user
+docker exec -it 3xui_app x-ui user
 ```
 
 ### Шаг 4: Настройка VLESS + XHTTP в панели
@@ -136,3 +136,5 @@ ufw enable
 *   **Удаление:** `docker compose down` (данные сохранятся в папке `./db`, если не удалите её).
 
 Этот метод полностью изолирует прокси от вашей ОС. Если что-то сломается, вы просто удаляете контейнер, а конфиги остаются в папке `db`.
+
+openssl x509 -in /opt/xray-docker/cert/ip/fullchain.pem -noout -dates -issuer -subject
