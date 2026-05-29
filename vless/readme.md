@@ -43,3 +43,5 @@ vless://7d2cd18d-3078-4e67-8af9-617c1411c404@185.55.241.245:443?type=tcp&encrypt
 # sing-box-extended Installer
 
 https://github.com/EikeiDev/OpenWRT-sing-box-extended
+
+https://www.youtube.com/watch?v=ViM4GQeaaWI
